@@ -9,8 +9,8 @@ public enum PowerUpType
 
 public class PowerUp : MonoBehaviour
 {
-    [Header("Power-Up Settings")]
-    public PowerUpType powerUpType = PowerUpType.TripleShot;
+    [Header("Power-Up Settings")] public PowerUpType powerUpType = PowerUpType.TripleShot;
+
     public float fallSpeed = 2.2f;
     public float wobbleSpeed = 3.5f;
     public float wobbleAmount = 0.8f;
@@ -22,10 +22,7 @@ public class PowerUp : MonoBehaviour
     {
         _spawnTime = Time.time;
         var cam = Camera.main;
-        if (cam != null)
-        {
-            _bottomY = -cam.orthographicSize - 1.5f;
-        }
+        if (cam != null) _bottomY = -cam.orthographicSize - 1.5f;
     }
 
     private void Update()
@@ -35,18 +32,15 @@ public class PowerUp : MonoBehaviour
         transform.Translate(new Vector3(wobble, -fallSpeed * Time.deltaTime, 0f), Space.World);
 
         // Out of bounds
-        if (transform.position.y < _bottomY)
-        {
-            Destroy(gameObject);
-        }
+        if (transform.position.y < _bottomY) Destroy(gameObject);
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    private void OnCollisionEnter2D(Collision2D collision)
     {
         CheckPickup(collision.gameObject);
     }
 
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void OnTriggerEnter2D(Collider2D collision)
     {
         CheckPickup(collision.gameObject);
     }
@@ -57,10 +51,7 @@ public class PowerUp : MonoBehaviour
         if (player == null) return;
         player.ApplyPowerUp(powerUpType);
 
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.PlayPowerUp();
-        }
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayPowerUp();
 
         Destroy(gameObject);
     }

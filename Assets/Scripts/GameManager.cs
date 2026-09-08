@@ -1,23 +1,24 @@
 using SpaceDefender;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class GameManager : MonoBehaviour
 {
+    private const string HighScoreKey = "SPACE_DEFENDER_HIGHSCORE";
     private static GameManager _instance;
+
+    [Header("State")] public bool showMainMenuOnStart = true;
+
     public static GameManager Instance
     {
         get
         {
-            if (_instance == null) _instance = UnityEngine.Object.FindAnyObjectByType<GameManager>(FindObjectsInactive.Include);
+            if (!_instance) _instance = FindAnyObjectByType<GameManager>(FindObjectsInactive.Include);
             return _instance;
         }
         private set => _instance = value;
     }
 
-    private const string HighScoreKey = "SPACE_DEFENDER_HIGHSCORE";
-
-    [Header("State")]
-    public bool showMainMenuOnStart = true;
     public bool IsGameStarted { get; private set; }
     public bool IsGameOver { get; private set; }
     public bool IsPaused { get; private set; }
@@ -25,12 +26,6 @@ public class GameManager : MonoBehaviour
     public int Score { get; private set; }
     private int HighScore { get; set; }
     private bool IsNewHighScore { get; set; }
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStaticState()
-    {
-        Instance = null;
-    }
 
     private void Awake()
     {
@@ -52,10 +47,7 @@ public class GameManager : MonoBehaviour
         if (showMainMenuOnStart)
         {
             IsGameStarted = false;
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.ShowMainMenu();
-            }
+            if (UIManager.Instance != null) UIManager.Instance.ShowMainMenu();
         }
         else
         {
@@ -66,13 +58,14 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
 #if ENABLE_INPUT_SYSTEM
-        var keyboard = UnityEngine.InputSystem.Keyboard.current;
+        var keyboard = Keyboard.current;
 #endif
 
         // Start game with Enter or Space if on Main Menu
         if (!IsGameStarted)
         {
-            var startPressed = keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame);
+            var startPressed = keyboard != null &&
+                               (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame);
 #if ENABLE_INPUT_SYSTEM
 #else
                 if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
@@ -90,7 +83,8 @@ public class GameManager : MonoBehaviour
         // Toggle Pause with Escape or P key
         if (IsGameStarted && !IsGameOver)
         {
-            var pausePressed = keyboard != null && (keyboard.escapeKey.wasPressedThisFrame || keyboard.pKey.wasPressedThisFrame);
+            var pausePressed = keyboard != null &&
+                               (keyboard.escapeKey.wasPressedThisFrame || keyboard.pKey.wasPressedThisFrame);
 #if ENABLE_INPUT_SYSTEM
 #else
                 if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P))
@@ -98,15 +92,14 @@ public class GameManager : MonoBehaviour
                     pausePressed = true;
                 }
 #endif
-            if (pausePressed)
-            {
-                TogglePause();
-            }
+            if (pausePressed) TogglePause();
         }
 
         // Quick restart when Game Over
         if (!IsGameOver) return;
-        var restartPressed = keyboard != null && (keyboard.rKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame);
+        var restartPressed = keyboard != null && (keyboard.rKey.wasPressedThisFrame ||
+                                                  keyboard.enterKey.wasPressedThisFrame ||
+                                                  keyboard.spaceKey.wasPressedThisFrame);
 #if ENABLE_INPUT_SYSTEM
 #else
                 if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
@@ -114,10 +107,13 @@ public class GameManager : MonoBehaviour
                     restartPressed = true;
                 }
 #endif
-        if (restartPressed)
-        {
-            RestartGame();
-        }
+        if (restartPressed) RestartGame();
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        Instance = null;
     }
 
     // ReSharper disable Unity.PerformanceAnalysis
@@ -165,15 +161,9 @@ public class GameManager : MonoBehaviour
             PlayerPrefs.Save();
         }
 
-        if (Score >= 200 && AchievementManager.Instance)
-        {
-            AchievementManager.Instance.UnlockAchievement("SCORE_200");
-        }
+        if (Score >= 200 && AchievementManager.Instance) AchievementManager.Instance.UnlockAchievement("SCORE_200");
 
-        if (UIManager.Instance)
-        {
-            UIManager.Instance.UpdateScore(Score, HighScore);
-        }
+        if (UIManager.Instance) UIManager.Instance.UpdateScore(Score, HighScore);
     }
 
     public void GameOver()
@@ -182,27 +172,17 @@ public class GameManager : MonoBehaviour
 
         IsGameOver = true;
 
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.PlayGameOver();
-        }
+        if (AudioManager.Instance != null) AudioManager.Instance.PlayGameOver();
 
-        if (UIManager.Instance != null)
-        {
-            UIManager.Instance.ShowGameOver(Score, HighScore, IsNewHighScore);
-        }
+        if (UIManager.Instance != null) UIManager.Instance.ShowGameOver(Score, HighScore, IsNewHighScore);
     }
 
     public void TogglePause()
     {
         if (IsPaused)
-        {
             ResumeGame();
-        }
         else
-        {
             PauseGame();
-        }
     }
 
     private void PauseGame()
@@ -212,10 +192,7 @@ public class GameManager : MonoBehaviour
         IsPaused = true;
         Time.timeScale = 0f;
 
-        if (UIManager.Instance)
-        {
-            UIManager.Instance.ShowPausePanel(true);
-        }
+        if (UIManager.Instance) UIManager.Instance.ShowPausePanel(true);
     }
 
     public void ResumeGame()
@@ -223,10 +200,7 @@ public class GameManager : MonoBehaviour
         IsPaused = false;
         Time.timeScale = 1f;
 
-        if (UIManager.Instance)
-        {
-            UIManager.Instance.ShowPausePanel(false);
-        }
+        if (UIManager.Instance) UIManager.Instance.ShowPausePanel(false);
     }
 
     public void RestartGame()
@@ -248,30 +222,18 @@ public class GameManager : MonoBehaviour
 
         // Clear active enemies
         var spawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
-        if (spawner)
-        {
-            spawner.ClearAllEnemies();
-        }
+        if (spawner) spawner.ClearAllEnemies();
 
         var player = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
-        if (player)
-        {
-            player.gameObject.SetActive(false);
-        }
+        if (player) player.gameObject.SetActive(false);
 
-        if (UIManager.Instance)
-        {
-            UIManager.Instance.ShowMainMenu();
-        }
+        if (UIManager.Instance) UIManager.Instance.ShowMainMenu();
     }
 
     public void ResetHighScore()
     {
         PlayerPrefs.DeleteKey(HighScoreKey);
         HighScore = 0;
-        if (UIManager.Instance)
-        {
-            UIManager.Instance.UpdateScore(Score, HighScore);
-        }
+        if (UIManager.Instance) UIManager.Instance.UpdateScore(Score, HighScore);
     }
 }

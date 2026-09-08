@@ -5,29 +5,28 @@ namespace SpaceDefender
 {
     public class EnemySpawner : MonoBehaviour
     {
-        [Header("Prefabs")]
-        public GameObject[] enemyPrefabs;
+        [Header("Prefabs")] public GameObject[] enemyPrefabs;
+
         public GameObject bossPrefab;
 
-        [Header("Spawn Timing")]
-        public float minSpawnDelay = 0.8f;
+        [Header("Spawn Timing")] public float minSpawnDelay = 0.8f;
+
         public float maxSpawnDelay = 1.6f;
 
-        [Header("Difficulty Scaling")]
-        public float maxDifficultyScore = 250f;
+        [Header("Difficulty Scaling")] public float maxDifficultyScore = 250f;
 
-        [Header("Boss Settings")]
-        public int bossScoreThreshold = 80;
+        [Header("Boss Settings")] public int bossScoreThreshold = 80;
+
         public int bossScoreInterval = 120;
 
-        [Header("Spawn Position")]
-        public float horizontalPadding = 0.8f;
+        [Header("Spawn Position")] public float horizontalPadding = 0.8f;
+
         public float spawnYOffset = 1.0f;
+        private float _maxX;
 
         private float _minX;
-        private float _maxX;
-        private float _spawnY;
         private int _nextBossScore = 80;
+        private float _spawnY;
 
         private bool IsBossActive { get; set; }
 
@@ -89,7 +88,9 @@ namespace SpaceDefender
                 SpawnRandomEnemy();
 
                 // Dynamic difficulty calculation based on current score
-                var difficulty = GameManager.Instance != null ? Mathf.Clamp01(GameManager.Instance.Score / maxDifficultyScore) : 0f;
+                var difficulty = GameManager.Instance
+                    ? Mathf.Clamp01(GameManager.Instance.Score / maxDifficultyScore)
+                    : 0f;
                 var scaledMin = Mathf.Lerp(minSpawnDelay, minSpawnDelay * 0.55f, difficulty);
                 var scaledMax = Mathf.Lerp(maxSpawnDelay, maxSpawnDelay * 0.65f, difficulty);
 
@@ -129,10 +130,7 @@ namespace SpaceDefender
             if (!GameManager.Instance) return;
             var diff = Mathf.Clamp01(GameManager.Instance.Score / maxDifficultyScore);
             var enemyComp = enemyObj.GetComponent<Enemy>();
-            if (enemyComp)
-            {
-                enemyComp.speed *= (1f + diff * 0.35f);
-            }
+            if (enemyComp) enemyComp.speed *= 1f + diff * 0.35f;
         }
 
         public void ClearAllEnemies()
@@ -142,38 +140,25 @@ namespace SpaceDefender
 
             var activeEnemies = FindObjectsByType<Enemy>();
             foreach (var enemy in activeEnemies)
-            {
-                if (enemy != null) Destroy(enemy.gameObject);
-            }
+                if (enemy != null)
+                    Destroy(enemy.gameObject);
 
             var activeBosses = FindObjectsByType<BossController>();
             foreach (var boss in activeBosses)
-            {
-                if (boss != null) Destroy(boss.gameObject);
-            }
+                if (boss != null)
+                    Destroy(boss.gameObject);
 
             var activePowerUps = FindObjectsByType<PowerUp>();
             foreach (var pup in activePowerUps)
-            {
-                if (pup != null) Destroy(pup.gameObject);
-            }
-
-            var activeLasers = FindObjectsByType<EnemyLaser>();
-            foreach (var laser in activeLasers)
-            {
-                if (laser) Destroy(laser.gameObject);
-            }
+                if (pup != null)
+                    Destroy(pup.gameObject);
 
             var playerLasers = FindObjectsByType<Laser>();
             foreach (var laser in playerLasers)
-            {
-                if (laser) Destroy(laser.gameObject);
-            }
+                if (laser)
+                    Destroy(laser.gameObject);
 
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.ShowBossBar(false);
-            }
+            if (UIManager.Instance != null) UIManager.Instance.ShowBossBar(false);
         }
     }
 }

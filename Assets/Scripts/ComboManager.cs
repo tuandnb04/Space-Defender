@@ -3,6 +3,11 @@ using UnityEngine;
 public class ComboManager : MonoBehaviour
 {
     private static ComboManager _instance;
+
+    [Header("Combo Settings")] public float comboTimeout = 2.2f;
+
+    public int maxMultiplier = 5;
+
     public static ComboManager Instance
     {
         get
@@ -13,19 +18,9 @@ public class ComboManager : MonoBehaviour
         private set => _instance = value;
     }
 
-    [Header("Combo Settings")]
-    public float comboTimeout = 2.2f;
-    public int maxMultiplier = 5;
-
     private int CurrentCombo { get; set; }
     private int Multiplier { get; set; } = 1;
     private float TimeRemaining { get; set; }
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStaticState()
-    {
-        Instance = null;
-    }
 
     private void Awake()
     {
@@ -45,22 +40,22 @@ public class ComboManager : MonoBehaviour
         else
         {
             if (UIManager.Instance)
-            {
                 UIManager.Instance.UpdateCombo(CurrentCombo, Multiplier, Mathf.Clamp01(TimeRemaining / comboTimeout));
-            }
         }
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        Instance = null;
     }
 
     public int RegisterKill(int baseScore, Vector3 position, GameObject floatingScorePrefab = null)
     {
         if (TimeRemaining > 0f)
-        {
             CurrentCombo++;
-        }
         else
-        {
             CurrentCombo = 1;
-        }
 
         TimeRemaining = comboTimeout;
         Multiplier = Mathf.Clamp(CurrentCombo, 1, maxMultiplier);
@@ -69,9 +64,7 @@ public class ComboManager : MonoBehaviour
 
         // Check combo achievement
         if (CurrentCombo >= 5 && AchievementManager.Instance != null)
-        {
             AchievementManager.Instance.UnlockAchievement("COMBO_5X");
-        }
 
         // Spawn floating score with combo colors
         if (floatingScorePrefab)
@@ -81,10 +74,7 @@ public class ComboManager : MonoBehaviour
             FloatingScore.SpawnText(floatingScorePrefab, position, text, scoreColor);
         }
 
-        if (UIManager.Instance)
-        {
-            UIManager.Instance.UpdateCombo(CurrentCombo, Multiplier, 1f);
-        }
+        if (UIManager.Instance) UIManager.Instance.UpdateCombo(CurrentCombo, Multiplier, 1f);
 
         return finalScore;
     }
@@ -95,10 +85,7 @@ public class ComboManager : MonoBehaviour
         Multiplier = 1;
         TimeRemaining = 0f;
 
-        if (UIManager.Instance)
-        {
-            UIManager.Instance.HideCombo();
-        }
+        if (UIManager.Instance) UIManager.Instance.HideCombo();
     }
 
     public static Color GetComboColor(int multiplier)

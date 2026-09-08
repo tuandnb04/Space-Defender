@@ -3,16 +3,9 @@ using UnityEngine;
 
 public class CameraShake : MonoBehaviour
 {
-    public static CameraShake Instance { get; private set; }
-
     private Vector3 _originalPos;
     private Coroutine _shakeCoroutine;
-
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStaticState()
-    {
-        Instance = null;
-    }
+    public static CameraShake Instance { get; private set; }
 
     private void Awake()
     {
@@ -20,12 +13,15 @@ public class CameraShake : MonoBehaviour
         _originalPos = transform.localPosition;
     }
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        Instance = null;
+    }
+
     public void Shake(float duration = 0.18f, float magnitude = 0.12f)
     {
-        if (_shakeCoroutine != null)
-        {
-            StopCoroutine(_shakeCoroutine);
-        }
+        if (_shakeCoroutine != null) StopCoroutine(_shakeCoroutine);
         _shakeCoroutine = StartCoroutine(ShakeRoutine(duration, magnitude));
     }
 

@@ -6,58 +6,54 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     private static PlayerController _instance;
+
+    [Header("Movement")] public float moveSpeed = 9f;
+
+    public float padding = 0.6f;
+
+    [Header("Health & Lives")] public int maxLives = 3;
+
+    public int currentLives = 3;
+    public float invulnerableDuration = 1.5f;
+
+    [Header("Shooting")] public GameObject laserPrefab;
+
+    public Transform firePoint;
+    public float fireRate = 0.22f;
+
+    [Header("Bombs & EMP Shockwave")] public GameObject shockwavePrefab;
+
+    public int maxBombs = 3;
+    public int currentBombs = 2;
+
+    [Header("Ship Customization")] public Sprite[] shipSprites;
+
+    [Header("Power-ups & Shields")] public GameObject shieldVisual;
+
+    public GameObject floatingScorePrefab;
+
+    [Header("Effects")] public GameObject explosionPrefab;
+
+    [Header("Demo / Test Mode")] public bool autoFireForDemo;
+
+    private bool _isDead;
+    private bool _isInvulnerable;
+    private float _maxX;
+
+    private float _minX;
+    private float _nextFireTime;
+    private SpriteRenderer _spriteRenderer;
+    private Vector3 _startPosition;
+
     public static PlayerController Instance
     {
         get
         {
-            if (_instance == null)
-            {
-                _instance = UnityEngine.Object.FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
-            }
+            if (_instance == null) _instance = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
             return _instance;
         }
         private set => _instance = value;
     }
-
-    [Header("Movement")]
-    public float moveSpeed = 9f;
-    public float padding = 0.6f;
-
-    [Header("Health & Lives")]
-    public int maxLives = 3;
-    public int currentLives = 3;
-    public float invulnerableDuration = 1.5f;
-
-    [Header("Shooting")]
-    public GameObject laserPrefab;
-    public Transform firePoint;
-    public float fireRate = 0.22f;
-
-    [Header("Bombs & EMP Shockwave")]
-    public GameObject shockwavePrefab;
-    public int maxBombs = 3;
-    public int currentBombs = 2;
-
-    [Header("Ship Customization")]
-    public Sprite[] shipSprites;
-
-    [Header("Power-ups & Shields")]
-    public GameObject shieldVisual;
-    public GameObject floatingScorePrefab;
-
-    [Header("Effects")]
-    public GameObject explosionPrefab;
-
-    [Header("Demo / Test Mode")]
-    public bool autoFireForDemo;
-
-    private float _minX;
-    private float _maxX;
-    private float _nextFireTime;
-    private bool _isDead;
-    private bool _isInvulnerable;
-    private SpriteRenderer _spriteRenderer;
-    private Vector3 _startPosition;
 
     private bool HasShield { get; set; }
 
@@ -68,16 +64,26 @@ public class PlayerController : MonoBehaviour
         Instance = this;
         _spriteRenderer = GetComponent<SpriteRenderer>();
         _startPosition = transform.position;
-        if (shieldVisual != null)
-        {
-            shieldVisual.SetActive(false);
-        }
+        if (shieldVisual != null) shieldVisual.SetActive(false);
     }
 
     private void Start()
     {
         CalculateScreenBounds();
         currentLives = maxLives;
+    }
+
+    private void Update()
+    {
+        if (_isDead) return;
+        if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver ||
+                                     GameManager.Instance.IsPaused)) return;
+
+        if (TripleShotTimer > 0f) TripleShotTimer -= Time.deltaTime;
+
+        HandleMovement();
+        HandleShooting();
+        HandleBombInput();
     }
 
     public void ResetPlayer()
@@ -143,16 +149,10 @@ public class PlayerController : MonoBehaviour
                 break;
         }
 
-        if (shieldVisual != null)
-        {
-            shieldVisual.SetActive(HasShield);
-        }
+        if (shieldVisual != null) shieldVisual.SetActive(HasShield);
 
         if (shipSprites == null || shipIndex >= shipSprites.Length || shipSprites[shipIndex] == null) return;
-        if (_spriteRenderer != null)
-        {
-            _spriteRenderer.sprite = shipSprites[shipIndex];
-        }
+        if (_spriteRenderer != null) _spriteRenderer.sprite = shipSprites[shipIndex];
     }
 
     private void CalculateScreenBounds()
@@ -171,21 +171,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        if (_isDead) return;
-        if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver || GameManager.Instance.IsPaused)) return;
-
-        if (TripleShotTimer > 0f)
-        {
-            TripleShotTimer -= Time.deltaTime;
-        }
-
-        HandleMovement();
-        HandleShooting();
-        HandleBombInput();
-    }
-
     private void HandleBombInput()
     {
         var bombPressed = false;
@@ -197,52 +182,34 @@ public class PlayerController : MonoBehaviour
 #else
             if (Input.GetKeyDown(KeyCode.B) || Input.GetMouseButtonDown(1)) bombPressed = true;
 #endif
-        if (bombPressed)
-        {
-            UseBomb();
-        }
+        if (bombPressed) UseBomb();
     }
 
     public void UseBomb()
     {
         if (_isDead || currentBombs <= 0) return;
-        if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver || GameManager.Instance.IsPaused)) return;
+        if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver ||
+                                     GameManager.Instance.IsPaused)) return;
 
         currentBombs--;
 
-        if (UIManager.Instance)
-        {
-            UIManager.Instance.UpdateBombs(currentBombs);
-        }
+        if (UIManager.Instance) UIManager.Instance.UpdateBombs(currentBombs);
 
-        if (shockwavePrefab)
-        {
-            Instantiate(shockwavePrefab, transform.position, Quaternion.identity);
-        }
+        if (shockwavePrefab) Instantiate(shockwavePrefab, transform.position, Quaternion.identity);
 
-        if (AudioManager.Instance)
-        {
-            AudioManager.Instance.PlayEmpBomb();
-        }
+        if (AudioManager.Instance) AudioManager.Instance.PlayEmpBomb();
 
-        if (AchievementManager.Instance)
-        {
-            AchievementManager.Instance.UnlockAchievement("NUKE_HERO");
-        }
+        if (AchievementManager.Instance) AchievementManager.Instance.UnlockAchievement("NUKE_HERO");
 
         if (floatingScorePrefab)
-        {
-            FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "EMP SHOCKWAVE!", new Color(0.3f, 0.9f, 1f));
-        }
+            FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "EMP SHOCKWAVE!",
+                new Color(0.3f, 0.9f, 1f));
     }
 
     public void AddBomb(int amount = 1)
     {
         currentBombs = Mathf.Min(currentBombs + amount, maxBombs);
-        if (UIManager.Instance)
-        {
-            UIManager.Instance.UpdateBombs(currentBombs);
-        }
+        if (UIManager.Instance) UIManager.Instance.UpdateBombs(currentBombs);
     }
 
     private void HandleMovement()
@@ -264,7 +231,9 @@ public class PlayerController : MonoBehaviour
                 if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) horizontal -= 1f;
                 if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) horizontal += 1f;
             }
-            catch (InvalidOperationException) { }
+            catch (InvalidOperationException)
+            {
+            }
         }
 
         var pos = transform.position;
@@ -285,10 +254,8 @@ public class PlayerController : MonoBehaviour
             if (keyboard.spaceKey.isPressed) shoot = true;
             if (keyboard.tKey.wasPressedThisFrame) autoFireForDemo = !autoFireForDemo;
         }
-        if (mouse != null && mouse.leftButton.isPressed)
-        {
-            shoot = true;
-        }
+
+        if (mouse != null && mouse.leftButton.isPressed) shoot = true;
 #else
             if (Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0))
             {
@@ -328,10 +295,7 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        if (AudioManager.Instance)
-        {
-            AudioManager.Instance.PlayShoot();
-        }
+        if (AudioManager.Instance) AudioManager.Instance.PlayShoot();
     }
 
     public void ApplyPowerUp(PowerUpType type)
@@ -341,44 +305,30 @@ public class PlayerController : MonoBehaviour
             case PowerUpType.TripleShot:
                 TripleShotTimer = 10f;
                 if (floatingScorePrefab != null)
-                {
-                    FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "TRIPLE SHOT!", new Color(1f, 0.9f, 0.1f));
-                }
-                if (AchievementManager.Instance != null)
-                {
-                    AchievementManager.Instance.UnlockAchievement("TRIPLE_POWER");
-                }
+                    FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "TRIPLE SHOT!",
+                        new Color(1f, 0.9f, 0.1f));
+                if (AchievementManager.Instance != null) AchievementManager.Instance.UnlockAchievement("TRIPLE_POWER");
                 break;
 
             case PowerUpType.Shield:
                 HasShield = true;
-                if (shieldVisual != null)
-                {
-                    shieldVisual.SetActive(true);
-                }
+                if (shieldVisual != null) shieldVisual.SetActive(true);
                 if (floatingScorePrefab != null)
-                {
-                    FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "SHIELD ACTIVE!", new Color(0.2f, 0.8f, 1f));
-                }
-                if (AchievementManager.Instance != null)
-                {
-                    AchievementManager.Instance.UnlockAchievement("SHIELD_UP");
-                }
+                    FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f,
+                        "SHIELD ACTIVE!", new Color(0.2f, 0.8f, 1f));
+                if (AchievementManager.Instance != null) AchievementManager.Instance.UnlockAchievement("SHIELD_UP");
                 break;
 
             case PowerUpType.Health:
                 if (currentLives < maxLives)
                 {
                     currentLives++;
-                    if (UIManager.Instance != null)
-                    {
-                        UIManager.Instance.UpdateLives(currentLives);
-                    }
+                    if (UIManager.Instance != null) UIManager.Instance.UpdateLives(currentLives);
                 }
+
                 if (floatingScorePrefab != null)
-                {
-                    FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "+1 LIFE!", new Color(0.3f, 1f, 0.4f));
-                }
+                    FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "+1 LIFE!",
+                        new Color(0.3f, 1f, 0.4f));
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(type), type, null);
@@ -393,25 +343,15 @@ public class PlayerController : MonoBehaviour
         if (HasShield)
         {
             HasShield = false;
-            if (shieldVisual)
-            {
-                shieldVisual.SetActive(false);
-            }
+            if (shieldVisual) shieldVisual.SetActive(false);
 
-            if (AudioManager.Instance)
-            {
-                AudioManager.Instance.PlayShieldDown();
-            }
+            if (AudioManager.Instance) AudioManager.Instance.PlayShieldDown();
 
-            if (CameraShake.Instance)
-            {
-                CameraShake.Instance.Shake(0.2f, 0.15f);
-            }
+            if (CameraShake.Instance) CameraShake.Instance.Shake(0.2f, 0.15f);
 
             if (floatingScorePrefab)
-            {
-                FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "SHIELD BROKEN!", Color.cyan);
-            }
+                FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "SHIELD BROKEN!",
+                    Color.cyan);
 
             StartCoroutine(InvulnerabilityFlash(0.6f));
             return;
@@ -419,29 +359,16 @@ public class PlayerController : MonoBehaviour
 
         currentLives -= damage;
 
-        if (CameraShake.Instance)
-        {
-            CameraShake.Instance.Shake(0.35f, 0.25f);
-        }
+        if (CameraShake.Instance) CameraShake.Instance.Shake(0.35f, 0.25f);
 
-        if (AudioManager.Instance)
-        {
-            AudioManager.Instance.PlayShieldDown();
-        }
+        if (AudioManager.Instance) AudioManager.Instance.PlayShieldDown();
 
-        if (UIManager.Instance)
-        {
-            UIManager.Instance.UpdateLives(currentLives);
-        }
+        if (UIManager.Instance) UIManager.Instance.UpdateLives(currentLives);
 
         if (currentLives <= 0)
-        {
             Die();
-        }
         else
-        {
             StartCoroutine(InvulnerabilityFlash(invulnerableDuration));
-        }
     }
 
     private IEnumerator InvulnerabilityFlash(float duration)
@@ -455,9 +382,10 @@ public class PlayerController : MonoBehaviour
             if (_spriteRenderer)
             {
                 var c = _spriteRenderer.color;
-                c.a = (Mathf.Approximately(c.a, 1f)) ? 0.3f : 1f;
+                c.a = Mathf.Approximately(c.a, 1f) ? 0.3f : 1f;
                 _spriteRenderer.color = c;
             }
+
             yield return new WaitForSeconds(interval);
             elapsed += interval;
         }
@@ -468,6 +396,7 @@ public class PlayerController : MonoBehaviour
             c.a = 1f;
             _spriteRenderer.color = c;
         }
+
         _isInvulnerable = false;
     }
 
@@ -476,20 +405,11 @@ public class PlayerController : MonoBehaviour
         if (_isDead) return;
         _isDead = true;
 
-        if (CameraShake.Instance)
-        {
-            CameraShake.Instance.Shake(0.5f, 0.35f);
-        }
+        if (CameraShake.Instance) CameraShake.Instance.Shake(0.5f, 0.35f);
 
-        if (explosionPrefab)
-        {
-            Instantiate(explosionPrefab, transform.position, Quaternion.identity);
-        }
+        if (explosionPrefab) Instantiate(explosionPrefab, transform.position, Quaternion.identity);
 
-        if (GameManager.Instance)
-        {
-            GameManager.Instance.GameOver();
-        }
+        if (GameManager.Instance) GameManager.Instance.GameOver();
 
         gameObject.SetActive(false);
     }
