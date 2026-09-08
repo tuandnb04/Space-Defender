@@ -1,281 +1,277 @@
+using SpaceDefender;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
-namespace SpaceDefender
+public class GameManager : MonoBehaviour
 {
-    public class GameManager : MonoBehaviour
+    private static GameManager _instance;
+    public static GameManager Instance
     {
-        public static GameManager Instance { get; private set; }
-
-        public const string HighScoreKey = "SPACE_DEFENDER_HIGHSCORE";
-
-        [Header("State")]
-        public bool showMainMenuOnStart = true;
-        public bool IsGameStarted { get; private set; } = false;
-        public bool IsGameOver { get; private set; } = false;
-        public bool IsPaused { get; private set; } = false;
-
-        public int Score { get; private set; } = 0;
-        public int HighScore { get; private set; } = 0;
-        public bool IsNewHighScore { get; private set; } = false;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
+        get
         {
-            Instance = null;
+            if (_instance == null) _instance = UnityEngine.Object.FindAnyObjectByType<GameManager>(FindObjectsInactive.Include);
+            return _instance;
         }
+        private set => _instance = value;
+    }
 
-        private void Awake()
+    private const string HighScoreKey = "SPACE_DEFENDER_HIGHSCORE";
+
+    [Header("State")]
+    public bool showMainMenuOnStart = true;
+    public bool IsGameStarted { get; private set; }
+    public bool IsGameOver { get; private set; }
+    public bool IsPaused { get; private set; }
+
+    public int Score { get; private set; }
+    private int HighScore { get; set; }
+    private bool IsNewHighScore { get; set; }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        Instance = null;
+    }
+
+    private void Awake()
+    {
+        Application.runInBackground = true;
+        Instance = this;
+        Score = 0;
+        IsGameOver = false;
+        IsPaused = false;
+        Time.timeScale = 1f;
+
+        HighScore = PlayerPrefs.GetInt(HighScoreKey, 0);
+        IsNewHighScore = false;
+    }
+
+    private void Start()
+    {
+        Time.timeScale = 1f;
+
+        if (showMainMenuOnStart)
         {
-            Application.runInBackground = true;
-            Instance = this;
-            Score = 0;
-            IsGameOver = false;
-            IsPaused = false;
-            Time.timeScale = 1f;
-
-            HighScore = PlayerPrefs.GetInt(HighScoreKey, 0);
-            IsNewHighScore = false;
-        }
-
-        private void Start()
-        {
-            Time.timeScale = 1f;
-
-            if (showMainMenuOnStart)
+            IsGameStarted = false;
+            if (UIManager.Instance != null)
             {
-                IsGameStarted = false;
-                if (UIManager.Instance != null)
-                {
-                    UIManager.Instance.ShowMainMenu();
-                }
-            }
-            else
-            {
-                StartGame();
+                UIManager.Instance.ShowMainMenu();
             }
         }
-
-        private void Update()
+        else
         {
+            StartGame();
+        }
+    }
+
+    private void Update()
+    {
 #if ENABLE_INPUT_SYSTEM
-            var keyboard = UnityEngine.InputSystem.Keyboard.current;
+        var keyboard = UnityEngine.InputSystem.Keyboard.current;
 #endif
 
-            // Start game with Enter or Space if on Main Menu
-            if (!IsGameStarted)
-            {
-                bool startPressed = false;
+        // Start game with Enter or Space if on Main Menu
+        if (!IsGameStarted)
+        {
+            var startPressed = keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame);
 #if ENABLE_INPUT_SYSTEM
-                if (keyboard != null && (keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame))
-                {
-                    startPressed = true;
-                }
 #else
                 if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
                 {
                     startPressed = true;
                 }
 #endif
-                if (startPressed)
-                {
-                    StartGame();
-                    return;
-                }
-            }
-
-            // Toggle Pause with Escape or P key
-            if (IsGameStarted && !IsGameOver)
+            if (startPressed)
             {
-                bool pausePressed = false;
+                StartGame();
+                return;
+            }
+        }
+
+        // Toggle Pause with Escape or P key
+        if (IsGameStarted && !IsGameOver)
+        {
+            var pausePressed = keyboard != null && (keyboard.escapeKey.wasPressedThisFrame || keyboard.pKey.wasPressedThisFrame);
 #if ENABLE_INPUT_SYSTEM
-                if (keyboard != null && (keyboard.escapeKey.wasPressedThisFrame || keyboard.pKey.wasPressedThisFrame))
-                {
-                    pausePressed = true;
-                }
 #else
                 if (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P))
                 {
                     pausePressed = true;
                 }
 #endif
-                if (pausePressed)
-                {
-                    TogglePause();
-                }
-            }
-
-            // Quick restart when Game Over
-            if (IsGameOver)
+            if (pausePressed)
             {
-                bool restartPressed = false;
+                TogglePause();
+            }
+        }
+
+        // Quick restart when Game Over
+        if (!IsGameOver) return;
+        var restartPressed = keyboard != null && (keyboard.rKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame);
 #if ENABLE_INPUT_SYSTEM
-                if (keyboard != null && (keyboard.rKey.wasPressedThisFrame || keyboard.enterKey.wasPressedThisFrame || keyboard.spaceKey.wasPressedThisFrame))
-                {
-                    restartPressed = true;
-                }
 #else
                 if (Input.GetKeyDown(KeyCode.R) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.Space))
                 {
                     restartPressed = true;
                 }
 #endif
-                if (restartPressed)
-                {
-                    RestartGame();
-                }
-            }
+        if (restartPressed)
+        {
+            RestartGame();
+        }
+    }
+
+    // ReSharper disable Unity.PerformanceAnalysis
+    public void StartGame()
+    {
+        IsGameStarted = true;
+        IsGameOver = false;
+        IsPaused = false;
+        Score = 0;
+        IsNewHighScore = false;
+        Time.timeScale = 1f;
+
+        if (UIManager.Instance)
+        {
+            UIManager.Instance.ShowInGameHUD();
+            UIManager.Instance.UpdateScore(Score, HighScore);
+            UIManager.Instance.UpdateLives(3);
         }
 
-        public void StartGame()
+        // Find player and make active/reset
+        var player = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
+        if (player)
         {
-            IsGameStarted = true;
-            IsGameOver = false;
-            IsPaused = false;
-            Score = 0;
-            IsNewHighScore = false;
-            Time.timeScale = 1f;
-
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.ShowInGameHUD();
-                UIManager.Instance.UpdateScore(Score, HighScore);
-                UIManager.Instance.UpdateLives(3);
-            }
-
-            // Find player and make active/reset
-            PlayerController player = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
-            if (player != null)
-            {
-                player.gameObject.SetActive(true);
-                player.ResetPlayer();
-            }
-
-            // Activate spawner
-            EnemySpawner spawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
-            if (spawner != null)
-            {
-                spawner.gameObject.SetActive(true);
-                spawner.ClearAllEnemies();
-            }
+            player.gameObject.SetActive(true);
+            player.ResetPlayer();
         }
 
-        public void AddScore(int amount)
+        // Activate spawner
+        var spawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
+        if (!spawner) return;
+        spawner.gameObject.SetActive(true);
+        spawner.ClearAllEnemies();
+    }
+
+    public void AddScore(int amount)
+    {
+        if (IsGameOver || !IsGameStarted) return;
+
+        Score += amount;
+        if (Score > HighScore)
         {
-            if (IsGameOver || !IsGameStarted) return;
-
-            Score += amount;
-            if (Score > HighScore)
-            {
-                HighScore = Score;
-                IsNewHighScore = true;
-                PlayerPrefs.SetInt(HighScoreKey, HighScore);
-                PlayerPrefs.Save();
-            }
-
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.UpdateScore(Score, HighScore);
-            }
+            HighScore = Score;
+            IsNewHighScore = true;
+            PlayerPrefs.SetInt(HighScoreKey, HighScore);
+            PlayerPrefs.Save();
         }
 
-        public void GameOver()
+        if (Score >= 200 && AchievementManager.Instance)
         {
-            if (IsGameOver) return;
-
-            IsGameOver = true;
-
-            if (AudioManager.Instance != null)
-            {
-                AudioManager.Instance.PlayGameOver();
-            }
-
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.ShowGameOver(Score, HighScore, IsNewHighScore);
-            }
+            AchievementManager.Instance.UnlockAchievement("SCORE_200");
         }
 
-        public void TogglePause()
+        if (UIManager.Instance)
         {
-            if (IsPaused)
-            {
-                ResumeGame();
-            }
-            else
-            {
-                PauseGame();
-            }
+            UIManager.Instance.UpdateScore(Score, HighScore);
+        }
+    }
+
+    public void GameOver()
+    {
+        if (IsGameOver) return;
+
+        IsGameOver = true;
+
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlayGameOver();
         }
 
-        public void PauseGame()
+        if (UIManager.Instance != null)
         {
-            if (IsGameOver || !IsGameStarted) return;
+            UIManager.Instance.ShowGameOver(Score, HighScore, IsNewHighScore);
+        }
+    }
 
-            IsPaused = true;
-            Time.timeScale = 0f;
+    public void TogglePause()
+    {
+        if (IsPaused)
+        {
+            ResumeGame();
+        }
+        else
+        {
+            PauseGame();
+        }
+    }
 
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.ShowPausePanel(true);
-            }
+    private void PauseGame()
+    {
+        if (IsGameOver || !IsGameStarted) return;
+
+        IsPaused = true;
+        Time.timeScale = 0f;
+
+        if (UIManager.Instance)
+        {
+            UIManager.Instance.ShowPausePanel(true);
+        }
+    }
+
+    public void ResumeGame()
+    {
+        IsPaused = false;
+        Time.timeScale = 1f;
+
+        if (UIManager.Instance)
+        {
+            UIManager.Instance.ShowPausePanel(false);
+        }
+    }
+
+    public void RestartGame()
+    {
+        Time.timeScale = 1f;
+        IsGameOver = false;
+        IsPaused = false;
+        Score = 0;
+        IsNewHighScore = false;
+        StartGame();
+    }
+
+    public void ReturnToMainMenu()
+    {
+        Time.timeScale = 1f;
+        IsGameStarted = false;
+        IsGameOver = false;
+        IsPaused = false;
+
+        // Clear active enemies
+        var spawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
+        if (spawner)
+        {
+            spawner.ClearAllEnemies();
         }
 
-        public void ResumeGame()
+        var player = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
+        if (player)
         {
-            IsPaused = false;
-            Time.timeScale = 1f;
-
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.ShowPausePanel(false);
-            }
+            player.gameObject.SetActive(false);
         }
 
-        public void RestartGame()
+        if (UIManager.Instance)
         {
-            Time.timeScale = 1f;
-            IsGameOver = false;
-            IsPaused = false;
-            Score = 0;
-            IsNewHighScore = false;
-            StartGame();
+            UIManager.Instance.ShowMainMenu();
         }
+    }
 
-        public void ReturnToMainMenu()
+    public void ResetHighScore()
+    {
+        PlayerPrefs.DeleteKey(HighScoreKey);
+        HighScore = 0;
+        if (UIManager.Instance)
         {
-            Time.timeScale = 1f;
-            IsGameStarted = false;
-            IsGameOver = false;
-            IsPaused = false;
-
-            // Clear active enemies
-            EnemySpawner spawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
-            if (spawner != null)
-            {
-                spawner.ClearAllEnemies();
-            }
-
-            PlayerController player = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
-            if (player != null)
-            {
-                player.gameObject.SetActive(false);
-            }
-
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.ShowMainMenu();
-            }
-        }
-
-        public void ResetHighScore()
-        {
-            PlayerPrefs.DeleteKey(HighScoreKey);
-            HighScore = 0;
-            if (UIManager.Instance != null)
-            {
-                UIManager.Instance.UpdateScore(Score, HighScore);
-            }
+            UIManager.Instance.UpdateScore(Score, HighScore);
         }
     }
 }

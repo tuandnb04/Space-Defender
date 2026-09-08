@@ -1,52 +1,47 @@
 using UnityEngine;
 
-namespace SpaceDefender
+public class EnemyLaser : MonoBehaviour
 {
-    public class EnemyLaser : MonoBehaviour
+    public float speed = 7f;
+    private float _bottomBound = -10f;
+
+    private void Start()
     {
-        public float speed = 7f;
-        private float bottomBound = -10f;
-
-        private void Start()
+        var cam = Camera.main;
+        if (cam != null)
         {
-            Camera cam = Camera.main;
-            if (cam != null)
-            {
-                bottomBound = -cam.orthographicSize - 1.5f;
-            }
+            _bottomBound = -cam.orthographicSize - 1.5f;
         }
+    }
 
-        private void Update()
+    private void Update()
+    {
+        transform.Translate(Vector3.down * (speed * Time.deltaTime));
+
+        if (transform.position.y < _bottomBound)
         {
-            transform.Translate(Vector3.down * speed * Time.deltaTime);
-
-            if (transform.position.y < bottomBound)
-            {
-                Destroy(gameObject);
-            }
+            Destroy(gameObject);
         }
+    }
 
-        private void OnTriggerEnter2D(Collider2D collision)
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        HandleHit(collision.gameObject);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        HandleHit(collision.gameObject);
+    }
+
+    private void HandleHit(GameObject hitObj)
+    {
+        if (!hitObj.CompareTag("Player")) return;
+        var player = hitObj.GetComponent<PlayerController>();
+        if (player != null)
         {
-            HandleHit(collision.gameObject);
+            player.TakeDamage();
         }
-
-        private void OnCollisionEnter2D(Collision2D collision)
-        {
-            HandleHit(collision.gameObject);
-        }
-
-        private void HandleHit(GameObject hitObj)
-        {
-            if (hitObj.CompareTag("Player"))
-            {
-                PlayerController player = hitObj.GetComponent<PlayerController>();
-                if (player != null)
-                {
-                    player.TakeDamage(1);
-                }
-                Destroy(gameObject);
-            }
-        }
+        Destroy(gameObject);
     }
 }

@@ -24,37 +24,35 @@ namespace SpaceDefender
         public float horizontalPadding = 0.8f;
         public float spawnYOffset = 1.0f;
 
-        private float minX;
-        private float maxX;
-        private float spawnY;
-        private Coroutine spawnCoroutine;
-        private bool isBossActive = false;
-        private int nextBossScore = 80;
+        private float _minX;
+        private float _maxX;
+        private float _spawnY;
+        private int _nextBossScore = 80;
 
-        public bool IsBossActive => isBossActive;
+        private bool IsBossActive { get; set; }
 
         private void Start()
         {
-            nextBossScore = bossScoreThreshold;
+            _nextBossScore = bossScoreThreshold;
             CalculateSpawnBounds();
-            spawnCoroutine = StartCoroutine(SpawnRoutine());
+            StartCoroutine(SpawnRoutine());
         }
 
         private void CalculateSpawnBounds()
         {
-            Camera cam = Camera.main;
+            var cam = Camera.main;
             if (cam != null)
             {
-                float halfWidth = cam.orthographicSize * cam.aspect;
-                minX = -halfWidth + horizontalPadding;
-                maxX = halfWidth - horizontalPadding;
-                spawnY = cam.orthographicSize + spawnYOffset;
+                var halfWidth = cam.orthographicSize * cam.aspect;
+                _minX = -halfWidth + horizontalPadding;
+                _maxX = halfWidth - horizontalPadding;
+                _spawnY = cam.orthographicSize + spawnYOffset;
             }
             else
             {
-                minX = -4f;
-                maxX = 4f;
-                spawnY = 6f;
+                _minX = -4f;
+                _maxX = 4f;
+                _spawnY = 6f;
             }
         }
 
@@ -64,7 +62,7 @@ namespace SpaceDefender
 
             while (true)
             {
-                if (GameManager.Instance != null)
+                if (GameManager.Instance)
                 {
                     if (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver)
                     {
@@ -73,7 +71,7 @@ namespace SpaceDefender
                     }
 
                     // Check boss spawning milestone
-                    if (bossPrefab != null && !isBossActive && GameManager.Instance.Score >= nextBossScore)
+                    if (bossPrefab && !IsBossActive && GameManager.Instance.Score >= _nextBossScore)
                     {
                         SpawnBoss();
                         yield return new WaitForSeconds(2.0f);
@@ -82,7 +80,7 @@ namespace SpaceDefender
                 }
 
                 // If boss is active, slow down regular enemy spawns to create a duel atmosphere
-                if (isBossActive)
+                if (IsBossActive)
                 {
                     yield return new WaitForSeconds(2.5f);
                     continue;
@@ -91,88 +89,85 @@ namespace SpaceDefender
                 SpawnRandomEnemy();
 
                 // Dynamic difficulty calculation based on current score
-                float difficulty = GameManager.Instance != null ? Mathf.Clamp01(GameManager.Instance.Score / maxDifficultyScore) : 0f;
-                float scaledMin = Mathf.Lerp(minSpawnDelay, minSpawnDelay * 0.55f, difficulty);
-                float scaledMax = Mathf.Lerp(maxSpawnDelay, maxSpawnDelay * 0.65f, difficulty);
+                var difficulty = GameManager.Instance != null ? Mathf.Clamp01(GameManager.Instance.Score / maxDifficultyScore) : 0f;
+                var scaledMin = Mathf.Lerp(minSpawnDelay, minSpawnDelay * 0.55f, difficulty);
+                var scaledMax = Mathf.Lerp(maxSpawnDelay, maxSpawnDelay * 0.65f, difficulty);
 
-                float delay = Random.Range(scaledMin, scaledMax);
+                var delay = Random.Range(scaledMin, scaledMax);
                 yield return new WaitForSeconds(delay);
             }
         }
 
         private void SpawnBoss()
         {
-            isBossActive = true;
-            Vector3 spawnPos = new Vector3(0f, spawnY, 0f);
+            IsBossActive = true;
+            var spawnPos = new Vector3(0f, _spawnY, 0f);
             Instantiate(bossPrefab, spawnPos, Quaternion.identity);
         }
 
         public void OnBossDefeated()
         {
-            isBossActive = false;
-            int currentScore = GameManager.Instance != null ? GameManager.Instance.Score : nextBossScore;
-            nextBossScore = currentScore + bossScoreInterval;
+            IsBossActive = false;
+            var currentScore = GameManager.Instance ? GameManager.Instance.Score : _nextBossScore;
+            _nextBossScore = currentScore + bossScoreInterval;
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
         private void SpawnRandomEnemy()
         {
             if (enemyPrefabs == null || enemyPrefabs.Length == 0) return;
 
-            int index = Random.Range(0, enemyPrefabs.Length);
-            GameObject prefab = enemyPrefabs[index];
+            var index = Random.Range(0, enemyPrefabs.Length);
+            var prefab = enemyPrefabs[index];
 
-            if (prefab != null)
+            if (!prefab) return;
+            var randomX = Random.Range(_minX, _maxX);
+            var spawnPos = new Vector3(randomX, _spawnY, 0f);
+            var enemyObj = Instantiate(prefab, spawnPos, Quaternion.identity);
+
+            // Slightly increase speed with difficulty
+            if (!GameManager.Instance) return;
+            var diff = Mathf.Clamp01(GameManager.Instance.Score / maxDifficultyScore);
+            var enemyComp = enemyObj.GetComponent<Enemy>();
+            if (enemyComp)
             {
-                float randomX = Random.Range(minX, maxX);
-                Vector3 spawnPos = new Vector3(randomX, spawnY, 0f);
-                GameObject enemyObj = Instantiate(prefab, spawnPos, Quaternion.identity);
-
-                // Slightly increase speed with difficulty
-                if (GameManager.Instance != null)
-                {
-                    float diff = Mathf.Clamp01(GameManager.Instance.Score / maxDifficultyScore);
-                    Enemy enemyComp = enemyObj.GetComponent<Enemy>();
-                    if (enemyComp != null)
-                    {
-                        enemyComp.speed *= (1f + diff * 0.35f);
-                    }
-                }
+                enemyComp.speed *= (1f + diff * 0.35f);
             }
         }
 
         public void ClearAllEnemies()
         {
-            isBossActive = false;
-            nextBossScore = bossScoreThreshold;
+            IsBossActive = false;
+            _nextBossScore = bossScoreThreshold;
 
-            Enemy[] activeEnemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
+            var activeEnemies = FindObjectsByType<Enemy>();
             foreach (var enemy in activeEnemies)
             {
                 if (enemy != null) Destroy(enemy.gameObject);
             }
 
-            BossController[] activeBosses = FindObjectsByType<BossController>(FindObjectsSortMode.None);
+            var activeBosses = FindObjectsByType<BossController>();
             foreach (var boss in activeBosses)
             {
                 if (boss != null) Destroy(boss.gameObject);
             }
 
-            PowerUp[] activePowerUps = FindObjectsByType<PowerUp>(FindObjectsSortMode.None);
+            var activePowerUps = FindObjectsByType<PowerUp>();
             foreach (var pup in activePowerUps)
             {
                 if (pup != null) Destroy(pup.gameObject);
             }
 
-            EnemyLaser[] activeLasers = FindObjectsByType<EnemyLaser>(FindObjectsSortMode.None);
+            var activeLasers = FindObjectsByType<EnemyLaser>();
             foreach (var laser in activeLasers)
             {
-                if (laser != null) Destroy(laser.gameObject);
+                if (laser) Destroy(laser.gameObject);
             }
 
-            Laser[] playerLasers = FindObjectsByType<Laser>(FindObjectsSortMode.None);
+            var playerLasers = FindObjectsByType<Laser>();
             foreach (var laser in playerLasers)
             {
-                if (laser != null) Destroy(laser.gameObject);
+                if (laser) Destroy(laser.gameObject);
             }
 
             if (UIManager.Instance != null)

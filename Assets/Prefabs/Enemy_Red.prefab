@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7300139070036873888}
   - component: {fileID: 3126286322151443420}
-  - component: {fileID: 4486081180313566442}
+  - component: {fileID: 7046547905915648821}
   - component: {fileID: 1089486808244304238}
   - component: {fileID: 6956153915222395190}
   m_Layer: 0
@@ -82,7 +82,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 3
+  m_SortingOrder: 6
   m_MaskInteraction: 0
   m_Sprite: {fileID: 3687158462734555838, guid: 1981aaab90560094a8dfbe3b3a30ecef, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -95,8 +95,8 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
---- !u!58 &4486081180313566442
-CircleCollider2D:
+--- !u!60 &7046547905915648821
+PolygonCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -130,7 +130,45 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.357
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 0.93, y: 0.84}
+    newSize: {x: 0.93, y: 0.84}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: 0.155, y: -0.12}
+      - {x: 0.155, y: -0.14}
+      - {x: 0.145, y: -0.14999999}
+      - {x: 0.13499999, y: -0.21}
+      - {x: 0.105, y: -0.24}
+      - {x: 0.085, y: -0.38}
+      - {x: 0.145, y: -0.41}
+      - {x: 0.175, y: -0.42}
+      - {x: 0.275, y: -0.42}
+      - {x: 0.33499998, y: -0.29}
+      - {x: 0.465, y: 0.089999996}
+      - {x: 0.465, y: 0.21}
+      - {x: 0.33499998, y: 0.39999998}
+      - {x: 0.325, y: 0.42}
+      - {x: 0.225, y: 0.42}
+      - {x: 0.095, y: 0.38}
+      - {x: 0.074999996, y: 0.34}
+      - {x: -0.21499999, y: 0.42}
+      - {x: -0.33499998, y: 0.42}
+      - {x: -0.465, y: 0.22}
+      - {x: -0.465, y: 0.03}
+      - {x: -0.285, y: -0.42}
+      - {x: -0.16499999, y: -0.42}
+      - {x: -0.13499999, y: -0.41}
+      - {x: -0.074999996, y: -0.38}
+      - {x: 0.125, y: -0.19}
+      - {x: 0.145, y: -0.16}
+  m_UseDelaunayMesh: 1
 --- !u!50 &1089486808244304238
 Rigidbody2D:
   serializedVersion: 5
@@ -183,5 +221,5 @@ MonoBehaviour:
   dropChance: 0.25
   canShoot: 1
   enemyLaserPrefab: {fileID: 513577091899842174, guid: 7624d2da5b0e7334d9eb18d7649f4477, type: 3}
-  minShootDelay: 1.2
-  maxShootDelay: 2.5
+  minShootDelay: 1.4
+  maxShootDelay: 2.8

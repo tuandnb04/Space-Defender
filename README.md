@@ -1,78 +1,121 @@
-# 🚀 Space Defender (Bảo Vệ Không Gian)
+# 🚀 Space Defender
 
-Mini-game 2D thuộc thể loại **Space Shooter** (Bắn ruồi / Bắn tàu vũ trụ không gian) được phát triển bằng **Unity 6 (6000.6.0f1)** và **Universal Render Pipeline (URP 2D)**.
-
----
-
-## 🎮 Giới Thiệu Gameplay
-
-Người chơi điều khiển một phi thuyền không gian di chuyển qua lại để bắn hạ các phi thuyền địch và thiên thạch đang rơi từ trên xuống, né tránh đạn của địch và va chạm thiên thạch để bảo vệ dải ngân hà và sinh tồn đạt điểm số cao nhất.
-
-### 🌟 Tính Năng Nổi Bật (Arcade Master Suite)
-- **Hệ thống điều khiển chuẩn xác:** Hỗ trợ New Input System (`A`/`D`, phím Mũi tên, chuột, `Space`), tự động giới hạn biên camera.
-- **Vật phẩm bổ trợ (Power-ups System):**
-  - ⚡ **Triple Shot (Tia Chớp Vàng):** Bắn chùm 3 tia laser tỏa góc cánh quạt cực mạnh kéo dài 10 giây.
-  - 🛡️ **Energy Shield (Khiên Xanh):** Tạo lồng bảo vệ quanh tàu, chống đỡ hoàn toàn 1 đòn tấn công mà không mất mạng.
-  - ⭐ **Health Restore (Ngôi Sao Đỏ):** Hồi phục +1 trái tim sinh lực (tối đa 3 tim).
-  - Tỉ lệ rơi ngẫu nhiên 25% khi bắn hạ kẻ địch hoặc thiên thạch.
-- **Trận Đấu Trùm Mini-Boss (Red UFO Mothership):**
-  - Xuất hiện tại các mốc điểm số cao (80 điểm trở lên).
-  - Thanh máu Boss chuyên dụng (**Boss HP Bar**) trên đỉnh màn hình hiển thị trực quan (20/20 HP).
-  - Di chuyển lượn sóng ngang, tấn công xả đạn Laser chùm 2-3 phát liên hồi.
-  - Khi bị hạ gục mang lại 100 điểm thưởng, hiệu ứng nổ lớn và rơi chắc chắn 1 vật phẩm Power-up.
-- **Độ Khó Tăng Tiến Động (Dynamic Difficulty Scaling):**
-  - Tần suất xuất hiện kẻ địch dồn dập hơn và tốc độ bay nhanh hơn tương ứng theo điểm số của người chơi.
-- **Rung Lắc Màn Hình & Điểm Số Bay (Camera Shake & Floating Text):**
-  - Rung camera tác động mạnh khi trúng đòn hoặc diệt Boss, rung nhẹ phấn khích khi nổ tàu địch.
-  - Chữ số điểm bay màu neon rực rỡ (`+10`, `+15`, `+25`, `+100 BOSS DEFEATED!`) nổi lên và mờ dần.
-- **Cơ chế chiến đấu phong phú:**
-  - Phi thuyền bắn tia đạn Laser xanh bay lên, tự hủy khi vượt biên trên. Phím `T` để bật/tắt chế độ tự bắn liên tục (Demo Mode).
-  - Tàu địch bắn tia Laser đỏ bay xuống dưới tấn công người chơi.
-  - Thiên thạch nhiều kích cỡ với hiệu ứng tự xoay góc khi rơi.
-- **Hệ thống 3 Mạng (Lives System ❤️❤️❤️):** Khi bị trúng đạn hoặc va chạm địch, phi thuyền mất 1 tim, chớp nháy bất tử trong 1.5s. Hết 3 mạng mới Game Over.
-- **Hệ thống Kỷ Lục Điểm Cao (High Score):** Tự động lưu kỷ lục qua `PlayerPrefs`, hiển thị cúp huy hiệu `★ NEW HIGH SCORE! ★` khi phá kỷ lục.
-- **Menu & Giao Diện Đầy Đủ (4 Panels):**
-  - **Main Menu:** Logo tiêu đề, nút **PLAY**, **HOW TO PLAY**, **EXIT**.
-  - **In-Game HUD:** Điểm số thời gian thực, kỷ lục điểm cao, 3 tim mạng, thanh Boss HP Bar, nút Pause `||`.
-  - **Pause Menu:** Phím `Esc`/`P` hoặc nút `||` để tạm dừng game, hỗ trợ Resume, Restart, Main Menu.
-  - **Game Over Panel:** Tổng kết điểm, kỷ lục, nút Play Again và Main Menu.
-- **Nền Vũ Trụ Liền Mạch (100% Seamless Scrolling):** Nền không gian sâu thẳm với hành tinh và vệt sao tốc độ cuộn dọc vô tận không tì vết.
-- **Hiệu Ứng & Âm Thanh Polish:**
-  - Hệ thống hạt Particle System: Ngọn lửa động cơ đuôi tàu và vụ nổ tung tóe khi mục tiêu bị tiêu diệt.
-  - Âm thanh SFX đầy đủ: Tiếng bắn đạn, đạn địch, ăn vật phẩm (`sfx_shieldUp`), mất mạng (`sfx_shieldDown`), nổ (`sfx_zap`), thua cuộc (`sfx_lose`), click nút.
-  - Nhạc nền vũ trụ BGM không gian du dương lặp vô tận.
+A high-performance 2D retro arcade space shooter game built with **Unity 6 (6000.6.0f1)** and **Universal Render Pipeline (URP 2D)**, featuring the CC0 asset suite by [Kenney](https://kenney.nl/assets/space-shooter-remastered).
 
 ---
 
-## 🕹️ Hướng Dẫn Điều Khiển
+## 📸 Visual Showcase
 
-| Thao tác | Phím bấm / Chuột |
-| :--- | :--- |
-| **Bắt đầu Game (Từ Menu)** | Click nút **PLAY** hoặc nhấn phím **Enter** / **Space** |
-| **Di chuyển Trái / Phải** | Phím **A** / **D** hoặc các phím **Mũi tên** |
-| **Bắn đạn Laser** | Phím **Space** (Phím cách) hoặc **Click chuột trái** |
-| **Bật/Tắt tự động bắn (Demo)** | Phím **T** |
-| **Tạm dừng / Tiếp tục** | Phím **Escape** / **P** hoặc click nút **||** |
-| **Chơi lại (Khi Game Over)** | Click nút **PLAY AGAIN** hoặc nhấn phím **R** |
-| **Về Menu Chính** | Click nút **MAIN MENU** trên bảng Pause hoặc Game Over |
+| Main Menu & Arcade UI | Ship Hangar Selection |
+| :---: | :---: |
+| ![Main Menu](Assets/Screenshots/elite1_main_menu.png) | ![Ship Hangar](Assets/Screenshots/elite2_hangar_modal.png) |
 
----
+| In-Game Combat & HUD | EMP Shockwave Detonation |
+| :---: | :---: |
+| ![In-Game Combat](Assets/Screenshots/elite5_ingame_hud.png) | ![EMP Shockwave](Assets/Screenshots/elite7_emp_shockwave.png) |
 
-## 🛠️ Công Nghệ & Tài Nguyên
+| 5x Combo Multiplier | Red UFO Mothership Boss Battle |
+| :---: | :---: |
+| ![Combo Multiplier](Assets/Screenshots/elite6_combo_multiplier.png) | ![Boss Battle](Assets/Screenshots/elite9_boss_fight.png) |
 
-- **Engine:** Unity 6000.6.0f1 (URP 2D)
-- **Input:** Unity New Input System (`com.unity.inputsystem`) & Legacy Fallback
-- **Tài nguyên:** [Kenney Space Shooter Remastered (CC0)](https://kenney.nl/assets/space-shooter-remastered)
-- **Mã nguồn:** Kiến trúc Clean Code, Singleton Managers (`GameManager`, `UIManager`, `AudioManager`), Spawner hướng đối tượng, Prefabs module hóa.
+| Achievement Notification | Audio Settings Modal |
+| :---: | :---: |
+| ![Achievement Toast](Assets/Screenshots/elite8_achievement_toast.png) | ![Audio Settings](Assets/Screenshots/elite4_settings_modal.png) |
 
 ---
 
-## 📂 Hướng Dẫn Chạy Dự Án
+## 🌟 Key Features
 
-1. Clone repository về máy:
+### 1. 🚀 Ship Hangar & Archetypes
+Select your combat spacecraft directly from the Main Menu Hangar:
+- **Blue Vanguard:** Balanced speed (9.5) and fire rate (0.22s) with 2 initial bombs.
+- **Orange Interceptor:** Supersonic thrusters (12.0 speed) for agile evasive maneuvers with 1 initial bomb.
+- **Green Striker:** Rapid-fire plasma cannons (0.16s rate) with 2 initial bombs.
+- **Red Dreadnought:** Heavy combat armor (8.2 speed) equipped with an initial **Energy Shield** and 3 initial bombs.
+
+### 2. 💣 Tactical EMP Nuke Bomb
+- Detonate screen-clearing EMP shockwaves by pressing **B**, **Right-Click**, or tapping the **BOMB [B]** HUD button.
+- Expands radially to instantly obliterate standard enemy fighters and projectile lasers while inflicting heavy damage (8 HP) to the UFO Boss.
+- Features screen shake and custom synthesized sound effects.
+
+### 3. 🔥 Combo Streak & Multiplier System
+- Eliminating hostiles within 2.2 seconds builds your combo meter from **x1** up to **x5**.
+- Dynamic top-center HUD bar displays current streak, multiplier text, and countdown timer.
+- Color-coded floating damage scores reward aggressive arcade play.
+
+### 4. 🛸 Red UFO Mothership Mini-Boss
+- Summons dynamically once crossing score thresholds (80+ points).
+- Dedicated top-screen **Boss HP Bar** (20 HP) with real-time health updates.
+- Employs horizontal sinusoidal flight patterns while firing spread salvos of enemy laser fire.
+- Yields massive point rewards and guaranteed power-up drops upon defeat.
+
+### 5. ⚡ Power-Up & Defensive Systems
+- **Triple Shot:** Tri-directional spread laser fire lasting 10 seconds.
+- **Energy Shield:** Absorbs an entire incoming projectile or collision hit without losing a life heart.
+- **Health Restore:** Restores +1 Life Heart (up to 3 maximum lives).
+- Temporary invulnerability invincibility flashing after taking damage.
+
+### 6. 🏆 Achievement & Toast System
+Features 7 unlockable achievements tracked via `PlayerPrefs`:
+- **First Blood:** Destroy your first enemy ship.
+- **Iron Wall:** Deploy an Energy Shield barrier.
+- **Overcharged:** Activate Triple Shot plasma cannons.
+- **Tactical Nuke:** Detonate an EMP Shockwave Bomb.
+- **Combo Master:** Reach a 5x Combo Streak.
+- **Boss Slayer:** Defeat the Red UFO Mothership.
+- **Star Veteran:** Score 200 or more points in a single match.
+- Real-time in-game banner toasts notify players of unlocks, and an Achievements modal provides full progress inspection.
+
+### 7. ⚙️ Audio Settings Modal
+- Independent volume control sliders for **BGM (Music)** and **SFX (Sound Effects)**.
+- Master **Mute All Audio** toggle.
+- Settings persist across game sessions via `PlayerPrefs`.
+- Accessible from both the Main Menu and In-Game Pause Menu.
+
+### 8. 🌌 Seamless Background Scrolling & VFX
+- Endless starfield background scrolling with zero visible seams or stutter.
+- Particle systems for thruster jet trails and explosive fragment bursts.
+
+---
+
+## 🕹️ Controls Guide
+
+| Action | Primary Input | Secondary Input |
+| :--- | :--- | :--- |
+| **Move Ship Left / Right** | `A` / `D` | `Left Arrow` / `Right Arrow` |
+| **Fire Blasters** | `Spacebar` | `Left Mouse Click` |
+| **Deploy EMP Nuke Bomb** | `B` | `Right Mouse Click` / HUD Button |
+| **Toggle Auto-Fire (Demo)** | `T` | — |
+| **Pause / Resume** | `Escape` / `P` | HUD `||` Button |
+| **Restart Game** | `R` (Game Over) | UI Button |
+
+---
+
+## 🛠️ Architecture & Technology Stack
+
+- **Engine:** Unity 6 (6000.6.0f1)
+- **Render Pipeline:** Universal Render Pipeline (URP 2D)
+- **Input System:** Unity New Input System (`com.unity.inputsystem`) with Legacy Fallback
+- **Audio:** Multi-channel AudioSource pool with synthetic SFX generation and looped BGM
+- **UI Architecture:** ScreenSpace-Camera Canvas with modular card modals, responsive anchor scaling, and crisp bitmap/vector font rendering
+- **Assets:** [Kenney Space Shooter Remastered (CC0)](https://kenney.nl/assets/space-shooter-remastered)
+
+---
+
+## 🚀 Running the Project
+
+### Standalone Executable (Windows 64-bit)
+A pre-compiled standalone binary is included in the repository:
+```bash
+Builds/Windows/SpaceDefender.exe
+```
+Double-click `SpaceDefender.exe` to play immediately without opening Unity.
+
+### In Unity Editor
+1. Clone the repository:
    ```bash
    git clone https://github.com/tuandnb04/Space-Defender.git
    ```
-2. Mở Unity Hub và thêm thư mục dự án (khuyến nghị Unity 6000.6+).
-3. Mở cảnh chính: `Assets/Scenes/SampleScene.unity`.
-4. Nhấn nút **Play** trên Unity Editor để trải nghiệm ngay.
+2. Open Unity Hub and add the project folder (Unity 6000.6.0f1 recommended).
+3. Open the main scene: `Assets/Scenes/SampleScene.unity`.
+4. Press the **Play** button in the Unity Editor toolbar.

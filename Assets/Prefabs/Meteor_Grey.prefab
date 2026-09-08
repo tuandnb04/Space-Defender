@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8277504925895595975}
   - component: {fileID: 3673368226562006276}
-  - component: {fileID: 2263099032128301841}
+  - component: {fileID: 5819300948389771251}
   - component: {fileID: 3203699517691604043}
   - component: {fileID: 1840842740340493755}
   m_Layer: 0
@@ -82,7 +82,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 3
+  m_SortingOrder: 6
   m_MaskInteraction: 0
   m_Sprite: {fileID: 6171837545649669406, guid: 45eeb9c15a1ed4b458f3a15ff4054f11, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -95,8 +95,8 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
---- !u!58 &2263099032128301841
-CircleCollider2D:
+--- !u!60 &5819300948389771251
+PolygonCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -130,7 +130,31 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.357
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1.01, y: 0.84}
+    newSize: {x: 1.01, y: 0.84}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: 0.405, y: -0.25}
+      - {x: 0.505, y: -0.04}
+      - {x: 0.505, y: 0.049999997}
+      - {x: 0.255, y: 0.42}
+      - {x: -0.345, y: 0.42}
+      - {x: -0.36499998, y: 0.41}
+      - {x: -0.505, y: 0.049999997}
+      - {x: -0.505, y: -0.14999999}
+      - {x: -0.24499999, y: -0.42}
+      - {x: -0.16499999, y: -0.42}
+      - {x: 0.114999995, y: -0.32}
+      - {x: 0.24499999, y: -0.37}
+      - {x: 0.39499998, y: -0.32999998}
+  m_UseDelaunayMesh: 1
 --- !u!50 &3203699517691604043
 Rigidbody2D:
   serializedVersion: 5
@@ -183,5 +207,5 @@ MonoBehaviour:
   dropChance: 0.25
   canShoot: 0
   enemyLaserPrefab: {fileID: 0}
-  minShootDelay: 1.2
-  maxShootDelay: 2.5
+  minShootDelay: 1.4
+  maxShootDelay: 2.8

@@ -1,91 +1,88 @@
 using UnityEngine;
 
-namespace SpaceDefender
+public class FloatingScore : MonoBehaviour
 {
-    public class FloatingScore : MonoBehaviour
+    [Header("Animation Settings")]
+    public float floatSpeed = 2.0f;
+    public float fadeDuration = 0.75f;
+    public Color defaultColor = new Color(1f, 0.92f, 0.23f, 1f); // Arcade Neon Yellow
+
+    private TextMesh _textMesh;
+    private MeshRenderer _meshRenderer;
+    private float _elapsed;
+    private Color _currentColor;
+
+    private void Awake()
     {
-        [Header("Animation Settings")]
-        public float floatSpeed = 2.0f;
-        public float fadeDuration = 0.75f;
-        public Color defaultColor = new Color(1f, 0.92f, 0.23f, 1f); // Arcade Neon Yellow
+        _textMesh = GetComponent<TextMesh>();
+        _meshRenderer = GetComponent<MeshRenderer>();
+        _currentColor = defaultColor;
 
-        private TextMesh textMesh;
-        private MeshRenderer meshRenderer;
-        private float elapsed = 0f;
-        private Color currentColor;
-
-        private void Awake()
+        if (_meshRenderer)
         {
-            textMesh = GetComponent<TextMesh>();
-            meshRenderer = GetComponent<MeshRenderer>();
-            currentColor = defaultColor;
-
-            if (meshRenderer != null)
-            {
-                meshRenderer.sortingOrder = 30; // Above lasers, enemies, and player
-            }
-
-            if (textMesh != null)
-            {
-                textMesh.color = currentColor;
-            }
+            _meshRenderer.sortingOrder = 30; // Above lasers, enemies, and player
         }
 
-        public void SetText(string text, Color? color = null)
+        if (_textMesh)
         {
-            if (color.HasValue)
-            {
-                currentColor = color.Value;
-            }
+            _textMesh.color = _currentColor;
+        }
+    }
 
-            if (textMesh != null)
-            {
-                textMesh.text = text;
-                textMesh.color = currentColor;
-            }
+    private void SetText(string text, Color? color = null)
+    {
+        if (color.HasValue)
+        {
+            _currentColor = color.Value;
         }
 
-        private void Update()
+        if (_textMesh == null) return;
+        _textMesh.text = text;
+        _textMesh.color = _currentColor;
+    }
+
+    private void Update()
+    {
+        transform.Translate(Vector3.up * (floatSpeed * Time.deltaTime), Space.World);
+        _elapsed += Time.deltaTime;
+
+        var alpha = Mathf.Clamp01(1f - (_elapsed / fadeDuration));
+        if (_textMesh)
         {
-            transform.Translate(Vector3.up * (floatSpeed * Time.deltaTime), Space.World);
-            elapsed += Time.deltaTime;
-
-            float alpha = Mathf.Clamp01(1f - (elapsed / fadeDuration));
-            if (textMesh != null)
-            {
-                Color c = currentColor;
-                c.a = alpha;
-                textMesh.color = c;
-            }
-
-            if (elapsed >= fadeDuration)
-            {
-                Destroy(gameObject);
-            }
+            var c = _currentColor;
+            c.a = alpha;
+            _textMesh.color = c;
         }
 
-        public static FloatingScore Spawn(GameObject prefab, Vector3 position, int score, Color? color = null)
+        if (_elapsed >= fadeDuration)
         {
-            if (prefab == null) return null;
-            GameObject obj = Instantiate(prefab, position, Quaternion.identity);
-            FloatingScore fs = obj.GetComponent<FloatingScore>();
-            if (fs != null)
-            {
-                fs.SetText("+" + score, color);
-            }
-            return fs;
+            Destroy(gameObject);
         }
+    }
 
-        public static FloatingScore SpawnText(GameObject prefab, Vector3 position, string text, Color? color = null)
+    // ReSharper disable Unity.PerformanceAnalysis
+    public static FloatingScore Spawn(GameObject prefab, Vector3 position, int score, Color? color = null)
+    {
+        if (!prefab) return null;
+        var obj = Instantiate(prefab, position, Quaternion.identity);
+        var fs = obj.GetComponent<FloatingScore>();
+        if (fs)
         {
-            if (prefab == null) return null;
-            GameObject obj = Instantiate(prefab, position, Quaternion.identity);
-            FloatingScore fs = obj.GetComponent<FloatingScore>();
-            if (fs != null)
-            {
-                fs.SetText(text, color);
-            }
-            return fs;
+            fs.SetText("+" + score, color);
         }
+        return fs;
+    }
+
+    // ReSharper disable Unity.PerformanceAnalysis
+    public static FloatingScore SpawnText(GameObject prefab, Vector3 position, string text, Color? color = null)
+    {
+        if (!prefab) return null;
+        var obj = Instantiate(prefab, position, Quaternion.identity);
+        var fs = obj.GetComponent<FloatingScore>();
+        if (fs)
+        {
+            fs.SetText(text, color);
+        }
+        return fs;
     }
 }

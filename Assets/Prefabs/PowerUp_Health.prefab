@@ -130,7 +130,7 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.1485
+  m_Radius: 0.35
 --- !u!50 &304376617582776414
 Rigidbody2D:
   serializedVersion: 5
@@ -173,4 +173,4 @@ MonoBehaviour:
   powerUpType: 2
   fallSpeed: 2.2
   wobbleSpeed: 3.5
-  wobbleAmount: 0.8
+  wobbleAmount: 0.4

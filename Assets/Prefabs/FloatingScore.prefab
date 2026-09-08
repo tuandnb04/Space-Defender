@@ -80,7 +80,7 @@ MeshRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 30
+  m_SortingOrder: 25
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
 --- !u!102 &263519365051339956
@@ -93,18 +93,18 @@ TextMesh:
   m_GameObject: {fileID: 3984610231378231889}
   m_Text: +10
   m_OffsetZ: 0
-  m_CharacterSize: 0.15
+  m_CharacterSize: 0.12
   m_LineSpacing: 1
   m_Anchor: 4
   m_Alignment: 1
   m_TabSize: 4
-  m_FontSize: 36
+  m_FontSize: 28
   m_FontStyle: 0
   m_RichText: 1
   m_Font: {fileID: 12800000, guid: 3c990e7cb6b787c48992d06c6cf725ba, type: 3}
   m_Color:
     serializedVersion: 2
-    rgba: 4282117119
+    rgba: 4284940109
 --- !u!114 &8935988215563682390
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -117,6 +117,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4419727896bab747973affe535a0a85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SpaceDefender.FloatingScore
-  floatSpeed: 2
+  floatSpeed: 2.4
   fadeDuration: 0.75
   defaultColor: {r: 1, g: 0.92, b: 0.23, a: 1}

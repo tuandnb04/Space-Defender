@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4119069354552946075}
   - component: {fileID: 2086494760485500192}
-  - component: {fileID: 7445496061996835324}
+  - component: {fileID: 272967060521474780}
   - component: {fileID: 6239350435409413486}
   - component: {fileID: 2400774129922112846}
   m_Layer: 0
@@ -82,7 +82,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 3
+  m_SortingOrder: 6
   m_MaskInteraction: 0
   m_Sprite: {fileID: 4596883188560925386, guid: 1833631d287b7dd48bb190e5b2ea927d, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -95,8 +95,8 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
---- !u!58 &7445496061996835324
-CircleCollider2D:
+--- !u!60 &272967060521474780
+PolygonCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -130,7 +130,27 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.18275
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 0.43, y: 0.43}
+    newSize: {x: 0.43, y: 0.43}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: -0.13499999, y: 0.21499999}
+      - {x: -0.21499999, y: 0.105}
+      - {x: -0.21499999, y: -0.055}
+      - {x: -0.195, y: -0.16499999}
+      - {x: -0.095, y: -0.21499999}
+      - {x: 0.074999996, y: -0.21499999}
+      - {x: 0.21499999, y: -0.125}
+      - {x: 0.21499999, y: 0.13499999}
+      - {x: 0.205, y: 0.21499999}
+  m_UseDelaunayMesh: 1
 --- !u!50 &6239350435409413486
 Rigidbody2D:
   serializedVersion: 5
@@ -183,5 +203,5 @@ MonoBehaviour:
   dropChance: 0.25
   canShoot: 0
   enemyLaserPrefab: {fileID: 0}
-  minShootDelay: 1.2
-  maxShootDelay: 2.5
+  minShootDelay: 1.4
+  maxShootDelay: 2.8

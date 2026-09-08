@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 1577199626197084883}
   - component: {fileID: 2325269918341184243}
-  - component: {fileID: 5654553580423525419}
+  - component: {fileID: 3816427278225654308}
   - component: {fileID: 4352340147624594448}
-  - component: {fileID: 9096871736943597733}
+  - component: {fileID: 4190839940914235082}
   m_Layer: 0
   m_Name: EnemyLaser
   m_TagString: Untagged
@@ -82,7 +82,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 4
+  m_SortingOrder: 9
   m_MaskInteraction: 0
   m_Sprite: {fileID: -1392933187468337125, guid: cfcf1c2f6371ec24cac80f835effa23c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -95,8 +95,8 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
---- !u!70 &5654553580423525419
-CapsuleCollider2D:
+--- !u!61 &3816427278225654308
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -130,8 +130,17 @@ CapsuleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 0.09, y: 0.54}
+    newSize: {x: 0.09, y: 0.54}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
   m_Size: {x: 0.09, y: 0.54}
-  m_Direction: 0
+  m_EdgeRadius: 0
 --- !u!50 &4352340147624594448
 Rigidbody2D:
   serializedVersion: 5
@@ -159,7 +168,7 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &9096871736943597733
+--- !u!114 &4190839940914235082
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -168,7 +177,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 513577091899842174}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3d790dab4c4ab404e91b8bc8abea6971, type: 3}
+  m_Script: {fileID: 11500000, guid: 8c72856181e3ca843858bad7e1e609a1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpaceDefender.EnemyLaser
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceDefender.Laser
   speed: 6.5
+  topBoundaryOffset: 1
+  isEnemyLaser: 1
