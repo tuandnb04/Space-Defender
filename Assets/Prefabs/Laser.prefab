@@ -179,7 +179,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8c72856181e3ca843858bad7e1e609a1, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpaceDefender.Laser
+  m_EditorClassIdentifier: Assembly-CSharp::Laser
   speed: 14
   topBoundaryOffset: 1
   isEnemyLaser: 0

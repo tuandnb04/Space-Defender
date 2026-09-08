@@ -2603,7 +2603,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 723164c26b7a5754591a232190c8bdd2, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpaceDefender.PlayerController
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 9.5
   padding: 0.6
   maxLives: 3

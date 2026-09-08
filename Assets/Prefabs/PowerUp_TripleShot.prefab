@@ -169,7 +169,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3b2c810d39aa6624f87453264990b529, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpaceDefender.PowerUp
+  m_EditorClassIdentifier: Assembly-CSharp::PowerUp
   powerUpType: 0
   fallSpeed: 2.2
   wobbleSpeed: 3.5

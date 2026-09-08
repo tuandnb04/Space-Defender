@@ -2332,5 +2332,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 104df8f135453344b8f378cf245fe28b, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpaceDefender.AutoDestroy
+  m_EditorClassIdentifier: Assembly-CSharp::AutoDestroy
   lifetime: 0.7

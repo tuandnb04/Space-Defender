@@ -104,7 +104,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6b02dca11baa80d44960e9e6e82df298, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpaceDefender.ShockwaveEffect
+  m_EditorClassIdentifier: Assembly-CSharp::ShockwaveEffect
   maxRadius: 14
   duration: 0.55
   bossDamage: 8

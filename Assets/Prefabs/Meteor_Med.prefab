@@ -189,7 +189,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b13580dffe7a42744808f0632900bef5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpaceDefender.Enemy
+  m_EditorClassIdentifier: Assembly-CSharp::Enemy
   speed: 3.2
   rotationSpeed: -60
   bottomBoundaryOffset: 1.5
