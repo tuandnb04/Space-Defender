@@ -138,18 +138,13 @@ public class Enemy : MonoBehaviour
 
             if (player)
             {
-                switch (comp.powerUpType)
-                {
-                    // Don't drop Shield if player already has shield active
-                    case PowerUpType.Shield when player.HasShield:
-                    // Don't drop Health if player is already at full health
-                    case PowerUpType.Health when player.currentLives >= player.maxLives:
-                        continue;
-                    case PowerUpType.TripleShot:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
+                // Don't drop Shield if player already has shield active
+                if (comp.powerUpType == PowerUpType.Shield && player.HasShield)
+                    continue;
+
+                // Don't drop Health if player is already at full health
+                if (comp.powerUpType == PowerUpType.Health && player.currentLives >= player.maxLives)
+                    continue;
             }
 
             candidates.Add(p);
@@ -169,9 +164,9 @@ public class Enemy : MonoBehaviour
         if (candidates.Count > 0)
         {
             var chosen = candidates[Random.Range(0, candidates.Count)];
-            Instantiate(chosen, transform.position, Quaternion.identity);
+            if (chosen) Instantiate(chosen, transform.position, Quaternion.identity);
         }
-        else
+        else if (powerUpPrefabs.Length > 0)
         {
             var chosen = powerUpPrefabs[Random.Range(0, powerUpPrefabs.Length)];
             if (chosen) Instantiate(chosen, transform.position, Quaternion.identity);

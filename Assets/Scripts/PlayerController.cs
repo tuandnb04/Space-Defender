@@ -330,8 +330,6 @@ public class PlayerController : MonoBehaviour
                     FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "+1 LIFE!",
                         new Color(0.3f, 1f, 0.4f));
                 break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(type), type, null);
         }
     }
 
