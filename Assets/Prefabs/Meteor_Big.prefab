@@ -175,6 +175,12 @@ MonoBehaviour:
   bottomBoundaryOffset: 1.5
   scoreValue: 10
   explosionPrefab: {fileID: 5339094264529407694, guid: e981189c1b886d146940b6c45409c383, type: 3}
+  floatingScorePrefab: {fileID: 3984610231378231889, guid: ccc79b6ea488c5f458d89406c4f4f05e, type: 3}
+  powerUpPrefabs:
+  - {fileID: 3098918087073044404, guid: 6fd090ab9a9b92040a96c0d1160e5dac, type: 3}
+  - {fileID: 3785531877311822139, guid: d51f9f7474899e74e852d5a231142b1b, type: 3}
+  - {fileID: 8217091128884909298, guid: 1bd7c0635f0fead42a7d27aaca820149, type: 3}
+  dropChance: 0.25
   canShoot: 0
   enemyLaserPrefab: {fileID: 0}
   minShootDelay: 1.2

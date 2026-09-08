@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &2991530730106327618
+--- !u!1 &8217091128884909298
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,25 +8,25 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3310851212081936108}
-  - component: {fileID: 5275832247912282908}
-  - component: {fileID: 3358233710770578221}
-  - component: {fileID: 2220740145326812152}
-  - component: {fileID: 1475972723476139382}
+  - component: {fileID: 3872682293438202950}
+  - component: {fileID: 4120709188574541247}
+  - component: {fileID: 7967763833136292125}
+  - component: {fileID: 304376617582776414}
+  - component: {fileID: 4604908060312168019}
   m_Layer: 0
-  m_Name: Enemy_Blue
+  m_Name: PowerUp_Health
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3310851212081936108
+--- !u!4 &3872682293438202950
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2991530730106327618}
+  m_GameObject: {fileID: 8217091128884909298}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -35,14 +35,14 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &5275832247912282908
+--- !u!212 &4120709188574541247
 SpriteRenderer:
   serializedVersion: 3
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2991530730106327618}
+  m_GameObject: {fileID: 8217091128884909298}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -82,26 +82,26 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 3
+  m_SortingOrder: 8
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -6013697311150986931, guid: 6c747ebfeb9692e46b84eec5709237d6, type: 3}
+  m_Sprite: {fileID: 4749538005934525174, guid: 11a34064bc1549f43b1287f7896cd1d1, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 0.93, y: 0.84}
+  m_Size: {x: 0.34, y: 0.33}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
---- !u!58 &3358233710770578221
+--- !u!58 &7967763833136292125
 CircleCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2991530730106327618}
+  m_GameObject: {fileID: 8217091128884909298}
   m_Enabled: 1
   serializedVersion: 3
   m_Density: 1
@@ -130,15 +130,15 @@ CircleCollider2D:
   m_CompositeOperation: 0
   m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  m_Radius: 0.357
---- !u!50 &2220740145326812152
+  m_Radius: 0.1485
+--- !u!50 &304376617582776414
 Rigidbody2D:
   serializedVersion: 5
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2991530730106327618}
+  m_GameObject: {fileID: 8217091128884909298}
   m_BodyType: 1
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
@@ -158,30 +158,19 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &1475972723476139382
+--- !u!114 &4604908060312168019
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2991530730106327618}
+  m_GameObject: {fileID: 8217091128884909298}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b13580dffe7a42744808f0632900bef5, type: 3}
+  m_Script: {fileID: 11500000, guid: 3b2c810d39aa6624f87453264990b529, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SpaceDefender.Enemy
-  speed: 4
-  rotationSpeed: 0
-  bottomBoundaryOffset: 1.5
-  scoreValue: 25
-  explosionPrefab: {fileID: 5339094264529407694, guid: e981189c1b886d146940b6c45409c383, type: 3}
-  floatingScorePrefab: {fileID: 3984610231378231889, guid: ccc79b6ea488c5f458d89406c4f4f05e, type: 3}
-  powerUpPrefabs:
-  - {fileID: 3098918087073044404, guid: 6fd090ab9a9b92040a96c0d1160e5dac, type: 3}
-  - {fileID: 3785531877311822139, guid: d51f9f7474899e74e852d5a231142b1b, type: 3}
-  - {fileID: 8217091128884909298, guid: 1bd7c0635f0fead42a7d27aaca820149, type: 3}
-  dropChance: 0.25
-  canShoot: 1
-  enemyLaserPrefab: {fileID: 513577091899842174, guid: 7624d2da5b0e7334d9eb18d7649f4477, type: 3}
-  minShootDelay: 1.2
-  maxShootDelay: 2.5
+  m_EditorClassIdentifier: Assembly-CSharp::SpaceDefender.PowerUp
+  powerUpType: 2
+  fallSpeed: 2.2
+  wobbleSpeed: 3.5
+  wobbleAmount: 0.8

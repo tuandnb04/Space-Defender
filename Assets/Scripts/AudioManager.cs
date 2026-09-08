@@ -11,6 +11,7 @@ namespace SpaceDefender
         public AudioClip enemyShootClip;
         public AudioClip explosionClip;
         public AudioClip shieldDownClip;
+        public AudioClip powerUpClip;
         public AudioClip gameOverClip;
         public AudioClip buttonClickClip;
         public AudioClip bgmClip;
@@ -83,6 +84,14 @@ namespace SpaceDefender
             if (shieldDownClip != null && sfxSource != null)
             {
                 sfxSource.PlayOneShot(shieldDownClip, 0.95f);
+            }
+        }
+
+        public void PlayPowerUp()
+        {
+            if (powerUpClip != null && sfxSource != null)
+            {
+                sfxSource.PlayOneShot(powerUpClip, 1.0f);
             }
         }
 

@@ -8,8 +8,23 @@ Mini-game 2D thuộc thể loại **Space Shooter** (Bắn ruồi / Bắn tàu v
 
 Người chơi điều khiển một phi thuyền không gian di chuyển qua lại để bắn hạ các phi thuyền địch và thiên thạch đang rơi từ trên xuống, né tránh đạn của địch và va chạm thiên thạch để bảo vệ dải ngân hà và sinh tồn đạt điểm số cao nhất.
 
-### 🌟 Tính Năng Nổi Bật (100/100 Điểm & Polish Cao Cấp)
+### 🌟 Tính Năng Nổi Bật (Arcade Master Suite)
 - **Hệ thống điều khiển chuẩn xác:** Hỗ trợ New Input System (`A`/`D`, phím Mũi tên, chuột, `Space`), tự động giới hạn biên camera.
+- **Vật phẩm bổ trợ (Power-ups System):**
+  - ⚡ **Triple Shot (Tia Chớp Vàng):** Bắn chùm 3 tia laser tỏa góc cánh quạt cực mạnh kéo dài 10 giây.
+  - 🛡️ **Energy Shield (Khiên Xanh):** Tạo lồng bảo vệ quanh tàu, chống đỡ hoàn toàn 1 đòn tấn công mà không mất mạng.
+  - ⭐ **Health Restore (Ngôi Sao Đỏ):** Hồi phục +1 trái tim sinh lực (tối đa 3 tim).
+  - Tỉ lệ rơi ngẫu nhiên 25% khi bắn hạ kẻ địch hoặc thiên thạch.
+- **Trận Đấu Trùm Mini-Boss (Red UFO Mothership):**
+  - Xuất hiện tại các mốc điểm số cao (80 điểm trở lên).
+  - Thanh máu Boss chuyên dụng (**Boss HP Bar**) trên đỉnh màn hình hiển thị trực quan (20/20 HP).
+  - Di chuyển lượn sóng ngang, tấn công xả đạn Laser chùm 2-3 phát liên hồi.
+  - Khi bị hạ gục mang lại 100 điểm thưởng, hiệu ứng nổ lớn và rơi chắc chắn 1 vật phẩm Power-up.
+- **Độ Khó Tăng Tiến Động (Dynamic Difficulty Scaling):**
+  - Tần suất xuất hiện kẻ địch dồn dập hơn và tốc độ bay nhanh hơn tương ứng theo điểm số của người chơi.
+- **Rung Lắc Màn Hình & Điểm Số Bay (Camera Shake & Floating Text):**
+  - Rung camera tác động mạnh khi trúng đòn hoặc diệt Boss, rung nhẹ phấn khích khi nổ tàu địch.
+  - Chữ số điểm bay màu neon rực rỡ (`+10`, `+15`, `+25`, `+100 BOSS DEFEATED!`) nổi lên và mờ dần.
 - **Cơ chế chiến đấu phong phú:**
   - Phi thuyền bắn tia đạn Laser xanh bay lên, tự hủy khi vượt biên trên. Phím `T` để bật/tắt chế độ tự bắn liên tục (Demo Mode).
   - Tàu địch bắn tia Laser đỏ bay xuống dưới tấn công người chơi.
@@ -18,13 +33,13 @@ Người chơi điều khiển một phi thuyền không gian di chuyển qua l�
 - **Hệ thống Kỷ Lục Điểm Cao (High Score):** Tự động lưu kỷ lục qua `PlayerPrefs`, hiển thị cúp huy hiệu `★ NEW HIGH SCORE! ★` khi phá kỷ lục.
 - **Menu & Giao Diện Đầy Đủ (4 Panels):**
   - **Main Menu:** Logo tiêu đề, nút **PLAY**, **HOW TO PLAY**, **EXIT**.
-  - **In-Game HUD:** Điểm số thời gian thực, kỷ lục điểm cao, 3 tim mạng, nút Pause `||`.
+  - **In-Game HUD:** Điểm số thời gian thực, kỷ lục điểm cao, 3 tim mạng, thanh Boss HP Bar, nút Pause `||`.
   - **Pause Menu:** Phím `Esc`/`P` hoặc nút `||` để tạm dừng game, hỗ trợ Resume, Restart, Main Menu.
   - **Game Over Panel:** Tổng kết điểm, kỷ lục, nút Play Again và Main Menu.
 - **Nền Vũ Trụ Liền Mạch (100% Seamless Scrolling):** Nền không gian sâu thẳm với hành tinh và vệt sao tốc độ cuộn dọc vô tận không tì vết.
 - **Hiệu Ứng & Âm Thanh Polish:**
   - Hệ thống hạt Particle System: Ngọn lửa động cơ đuôi tàu và vụ nổ tung tóe khi mục tiêu bị tiêu diệt.
-  - Âm thanh SFX đầy đủ: Tiếng bắn đạn, đạn địch, mất mạng (`sfx_shieldDown`), nổ (`sfx_zap`), thua cuộc (`sfx_lose`), click nút.
+  - Âm thanh SFX đầy đủ: Tiếng bắn đạn, đạn địch, ăn vật phẩm (`sfx_shieldUp`), mất mạng (`sfx_shieldDown`), nổ (`sfx_zap`), thua cuộc (`sfx_lose`), click nút.
   - Nhạc nền vũ trụ BGM không gian du dương lặp vô tận.
 
 ---

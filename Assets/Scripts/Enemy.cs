@@ -12,6 +12,9 @@ namespace SpaceDefender
         [Header("Game Play")]
         public int scoreValue = 10;
         public GameObject explosionPrefab;
+        public GameObject floatingScorePrefab;
+        public GameObject[] powerUpPrefabs;
+        public float dropChance = 0.25f;
 
         [Header("Shooting Settings")]
         public bool canShoot = false;
@@ -88,6 +91,16 @@ namespace SpaceDefender
                 GameManager.Instance.AddScore(scoreValue);
             }
 
+            if (CameraShake.Instance != null)
+            {
+                CameraShake.Instance.Shake(0.12f, 0.08f);
+            }
+
+            if (floatingScorePrefab != null)
+            {
+                FloatingScore.Spawn(floatingScorePrefab, transform.position, scoreValue);
+            }
+
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayExplosion();
@@ -96,6 +109,16 @@ namespace SpaceDefender
             if (explosionPrefab != null)
             {
                 Instantiate(explosionPrefab, transform.position, Quaternion.identity);
+            }
+
+            // Power-up drop chance
+            if (powerUpPrefabs != null && powerUpPrefabs.Length > 0 && Random.value <= dropChance)
+            {
+                int pIdx = Random.Range(0, powerUpPrefabs.Length);
+                if (powerUpPrefabs[pIdx] != null)
+                {
+                    Instantiate(powerUpPrefabs[pIdx], transform.position, Quaternion.identity);
+                }
             }
 
             Destroy(gameObject);

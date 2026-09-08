@@ -19,6 +19,10 @@ namespace SpaceDefender
         public Transform firePoint;
         public float fireRate = 0.22f;
 
+        [Header("Power-ups & Shields")]
+        public GameObject shieldVisual;
+        public GameObject floatingScorePrefab;
+
         [Header("Effects")]
         public GameObject explosionPrefab;
 
@@ -30,13 +34,22 @@ namespace SpaceDefender
         private float nextFireTime = 0f;
         private bool isDead = false;
         private bool isInvulnerable = false;
+        private bool hasShield = false;
+        private float tripleShotTimer = 0f;
         private SpriteRenderer spriteRenderer;
         private Vector3 startPosition;
+
+        public bool HasShield => hasShield;
+        public float TripleShotTimer => tripleShotTimer;
 
         private void Awake()
         {
             spriteRenderer = GetComponent<SpriteRenderer>();
             startPosition = transform.position;
+            if (shieldVisual != null)
+            {
+                shieldVisual.SetActive(false);
+            }
         }
 
         private void Start()
@@ -49,8 +62,15 @@ namespace SpaceDefender
         {
             isDead = false;
             isInvulnerable = false;
+            hasShield = false;
+            tripleShotTimer = 0f;
             currentLives = maxLives;
             transform.position = startPosition;
+
+            if (shieldVisual != null)
+            {
+                shieldVisual.SetActive(false);
+            }
 
             if (spriteRenderer != null)
             {
@@ -85,6 +105,11 @@ namespace SpaceDefender
         {
             if (isDead) return;
             if (GameManager.Instance != null && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver || GameManager.Instance.IsPaused)) return;
+
+            if (tripleShotTimer > 0f)
+            {
+                tripleShotTimer -= Time.deltaTime;
+            }
 
             HandleMovement();
             HandleShooting();
@@ -160,7 +185,19 @@ namespace SpaceDefender
 
             if (laserPrefab != null)
             {
-                Instantiate(laserPrefab, spawnPos, Quaternion.identity);
+                if (tripleShotTimer > 0f)
+                {
+                    // Center laser
+                    Instantiate(laserPrefab, spawnPos, Quaternion.identity);
+                    // Left laser tilted 14 degrees
+                    Instantiate(laserPrefab, spawnPos + Vector3.left * 0.25f, Quaternion.Euler(0, 0, 14f));
+                    // Right laser tilted -14 degrees
+                    Instantiate(laserPrefab, spawnPos + Vector3.right * 0.25f, Quaternion.Euler(0, 0, -14f));
+                }
+                else
+                {
+                    Instantiate(laserPrefab, spawnPos, Quaternion.identity);
+                }
             }
 
             if (AudioManager.Instance != null)
@@ -169,11 +206,85 @@ namespace SpaceDefender
             }
         }
 
+        public void ApplyPowerUp(PowerUpType type)
+        {
+            switch (type)
+            {
+                case PowerUpType.TripleShot:
+                    tripleShotTimer = 10f;
+                    if (floatingScorePrefab != null)
+                    {
+                        FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "TRIPLE SHOT!", new Color(1f, 0.9f, 0.1f));
+                    }
+                    break;
+
+                case PowerUpType.Shield:
+                    hasShield = true;
+                    if (shieldVisual != null)
+                    {
+                        shieldVisual.SetActive(true);
+                    }
+                    if (floatingScorePrefab != null)
+                    {
+                        FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "SHIELD ACTIVE!", new Color(0.2f, 0.8f, 1f));
+                    }
+                    break;
+
+                case PowerUpType.Health:
+                    if (currentLives < maxLives)
+                    {
+                        currentLives++;
+                        if (UIManager.Instance != null)
+                        {
+                            UIManager.Instance.UpdateLives(currentLives);
+                        }
+                    }
+                    if (floatingScorePrefab != null)
+                    {
+                        FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "+1 LIFE!", new Color(0.3f, 1f, 0.4f));
+                    }
+                    break;
+            }
+        }
+
         public void TakeDamage(int damage = 1)
         {
             if (isDead || isInvulnerable) return;
 
+            // Absorb hit with shield if active
+            if (hasShield)
+            {
+                hasShield = false;
+                if (shieldVisual != null)
+                {
+                    shieldVisual.SetActive(false);
+                }
+
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayShieldDown();
+                }
+
+                if (CameraShake.Instance != null)
+                {
+                    CameraShake.Instance.Shake(0.2f, 0.15f);
+                }
+
+                if (floatingScorePrefab != null)
+                {
+                    FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.8f, "SHIELD BROKEN!", Color.cyan);
+                }
+
+                StartCoroutine(InvulnerabilityFlash(0.6f));
+                return;
+            }
+
             currentLives -= damage;
+
+            if (CameraShake.Instance != null)
+            {
+                CameraShake.Instance.Shake(0.35f, 0.25f);
+            }
 
             if (AudioManager.Instance != null)
             {
@@ -191,17 +302,17 @@ namespace SpaceDefender
             }
             else
             {
-                StartCoroutine(InvulnerabilityFlash());
+                StartCoroutine(InvulnerabilityFlash(invulnerableDuration));
             }
         }
 
-        private IEnumerator InvulnerabilityFlash()
+        private IEnumerator InvulnerabilityFlash(float duration)
         {
             isInvulnerable = true;
             float elapsed = 0f;
             float interval = 0.12f;
 
-            while (elapsed < invulnerableDuration)
+            while (elapsed < duration)
             {
                 if (spriteRenderer != null)
                 {
@@ -226,6 +337,11 @@ namespace SpaceDefender
         {
             if (isDead) return;
             isDead = true;
+
+            if (CameraShake.Instance != null)
+            {
+                CameraShake.Instance.Shake(0.5f, 0.35f);
+            }
 
             if (explosionPrefab != null)
             {

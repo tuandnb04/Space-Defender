@@ -22,6 +22,12 @@ namespace SpaceDefender
         public Image[] heartImages;
         public Button pauseButton;
 
+        [Header("Boss HUD")]
+        public GameObject bossBarPanel;
+        public Slider bossHPSlider;
+        public Text bossNameText;
+        public Text bossHPText;
+
         [Header("Pause Panel")]
         public GameObject pausePanel;
         public Button resumeButton;
@@ -162,6 +168,7 @@ namespace SpaceDefender
             if (pausePanel != null) pausePanel.SetActive(false);
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
             if (howToPlayModal != null) howToPlayModal.SetActive(false);
+            ShowBossBar(false);
         }
 
         public void ShowInGameHUD()
@@ -171,6 +178,7 @@ namespace SpaceDefender
             if (pausePanel != null) pausePanel.SetActive(false);
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
             if (howToPlayModal != null) howToPlayModal.SetActive(false);
+            ShowBossBar(false);
         }
 
         public void ShowPausePanel(bool show)
@@ -181,8 +189,43 @@ namespace SpaceDefender
             }
         }
 
+        public void ShowHowToPlay(bool show)
+        {
+            if (howToPlayModal != null)
+            {
+                howToPlayModal.SetActive(show);
+            }
+        }
+
+        public void ShowBossBar(bool show, string bossName = "RED UFO MOTHERSHIP")
+        {
+            if (bossBarPanel != null)
+            {
+                bossBarPanel.SetActive(show);
+            }
+
+            if (bossNameText != null && show)
+            {
+                bossNameText.text = bossName;
+            }
+        }
+
+        public void UpdateBossHP(int current, int max)
+        {
+            if (bossHPSlider != null)
+            {
+                bossHPSlider.value = max > 0 ? (float)current / max : 0f;
+            }
+
+            if (bossHPText != null)
+            {
+                bossHPText.text = $"{current} / {max}";
+            }
+        }
+
         public void ShowGameOver(int finalScore, int highScore, bool isNewRecord = false)
         {
+            ShowBossBar(false);
             if (pausePanel != null) pausePanel.SetActive(false);
             if (gameOverPanel != null) gameOverPanel.SetActive(true);
 

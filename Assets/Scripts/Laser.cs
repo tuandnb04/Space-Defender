@@ -21,9 +21,9 @@ namespace SpaceDefender
 
         private void Update()
         {
-            transform.Translate(Vector3.up * (speed * Time.deltaTime), Space.World);
+            transform.Translate(transform.up * (speed * Time.deltaTime), Space.World);
 
-            if (transform.position.y > topY)
+            if (transform.position.y > topY || Mathf.Abs(transform.position.x) > 10f)
             {
                 Destroy(gameObject);
             }
@@ -46,6 +46,15 @@ namespace SpaceDefender
             {
                 enemy.TakeHit();
                 Destroy(gameObject);
+                return;
+            }
+
+            BossController boss = target.GetComponent<BossController>();
+            if (boss != null)
+            {
+                boss.TakeHit();
+                Destroy(gameObject);
+                return;
             }
         }
     }

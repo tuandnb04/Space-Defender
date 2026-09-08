@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 75de271b7e452664b8fd25a5fb1fb9b7
+guid: 0a69cf021b256f84fbaa161b40b89c5c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -5617591467668424822
-    second: screen5_gameover-1_0
+      213: -5179763100183518840
+    second: arcade3_shield_active_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -102,7 +102,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: screen5_gameover-1_0
+      name: arcade3_shield_active_0
       rect:
         serializedVersion: 2
         x: 0
@@ -117,8 +117,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a87bb5cc25e4a02b0800000000000000
-      internalID: -5617591467668424822
+      spriteID: 881a2e867e8cd18b0800000000000000
+      internalID: -5179763100183518840
       vertices: []
       indices: 
       edges: []
@@ -137,7 +137,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      screen5_gameover-1_0: -5617591467668424822
+      arcade3_shield_active_0: -5179763100183518840
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

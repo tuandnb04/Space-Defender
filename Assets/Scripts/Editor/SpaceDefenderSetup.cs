@@ -39,6 +39,43 @@ namespace SpaceDefender.Editor
             if (GameManager.Instance != null) GameManager.Instance.GameOver();
         }
 
+        [MenuItem("Space Defender/Test/Give Triple Shot", false, 14)]
+        public static void TestGiveTripleShot()
+        {
+            PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
+            if (pc != null) pc.ApplyPowerUp(PowerUpType.TripleShot);
+        }
+
+        [MenuItem("Space Defender/Test/Give Shield", false, 15)]
+        public static void TestGiveShield()
+        {
+            PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
+            if (pc != null) pc.ApplyPowerUp(PowerUpType.Shield);
+        }
+
+        [MenuItem("Space Defender/Test/Spawn Boss", false, 16)]
+        public static void TestSpawnBoss()
+        {
+            EnemySpawner spawner = Object.FindAnyObjectByType<EnemySpawner>();
+            if (spawner != null && spawner.bossPrefab != null)
+            {
+                Object.Instantiate(spawner.bossPrefab, new Vector3(0, 5.5f, 0), Quaternion.identity);
+            }
+        }
+
+        [MenuItem("Space Defender/Test/Toggle AutoFire", false, 17)]
+        public static void TestToggleAutoFire()
+        {
+            PlayerController pc = Object.FindAnyObjectByType<PlayerController>();
+            if (pc != null) pc.autoFireForDemo = !pc.autoFireForDemo;
+        }
+
+        [MenuItem("Space Defender/Test/Open How To Play", false, 18)]
+        public static void TestOpenHowToPlay()
+        {
+            if (UIManager.Instance != null) UIManager.Instance.ShowHowToPlay(true);
+        }
+
         [MenuItem("Space Defender/Setup Game Scene", false, 1)]
         public static void BuildWholeGame()
         {
@@ -53,6 +90,7 @@ namespace SpaceDefender.Editor
             AudioClip enemyShootClip = AssetDatabase.LoadAssetAtPath<AudioClip>($"{KenneyBasePath}/Bonus/sfx_laser2.ogg");
             AudioClip explosionClip = AssetDatabase.LoadAssetAtPath<AudioClip>($"{KenneyBasePath}/Bonus/sfx_zap.ogg");
             AudioClip shieldDownClip = AssetDatabase.LoadAssetAtPath<AudioClip>($"{KenneyBasePath}/Bonus/sfx_shieldDown.ogg");
+            AudioClip powerUpClip = AssetDatabase.LoadAssetAtPath<AudioClip>($"{KenneyBasePath}/Bonus/sfx_shieldUp.ogg");
             AudioClip gameOverClip = AssetDatabase.LoadAssetAtPath<AudioClip>($"{KenneyBasePath}/Bonus/sfx_lose.ogg");
             AudioClip buttonClickClip = AssetDatabase.LoadAssetAtPath<AudioClip>($"{KenneyBasePath}/Bonus/sfx_twoTone.ogg");
 
@@ -64,46 +102,59 @@ namespace SpaceDefender.Editor
             Sprite heartSprite = LoadSprite($"{KenneyBasePath}/PNG/UI/playerLife1_red.png");
             if (heartSprite == null) heartSprite = LoadSprite($"{KenneyBasePath}/PNG/UI/playerLife1_blue.png");
 
-            // 3. Create Explosion Prefab
+            // 3. Create Floating Score Prefab
+            GameObject floatingScorePrefab = CreateFloatingScorePrefab(gameFont);
+
+            // 4. Create Power-up Prefabs
+            GameObject pUpTriple = CreatePowerUpPrefab("PowerUp_TripleShot", $"{KenneyBasePath}/PNG/Power-ups/powerupYellow_bolt.png", PowerUpType.TripleShot);
+            GameObject pUpShield = CreatePowerUpPrefab("PowerUp_Shield", $"{KenneyBasePath}/PNG/Power-ups/powerupBlue_shield.png", PowerUpType.Shield);
+            GameObject pUpHealth = CreatePowerUpPrefab("PowerUp_Health", $"{KenneyBasePath}/PNG/Power-ups/powerupRed_star.png", PowerUpType.Health);
+            GameObject[] powerUpPrefabs = new GameObject[] { pUpTriple, pUpShield, pUpHealth };
+
+            // 5. Create Explosion Prefab
             GameObject explosionPrefab = CreateExplosionPrefab();
 
-            // 4. Create Player Laser Prefab
+            // 6. Create Player Laser Prefab
             Sprite laserSprite = LoadSprite($"{KenneyBasePath}/PNG/Lasers/laserBlue01.png");
             GameObject laserPrefab = CreateLaserPrefab(laserSprite);
 
-            // 5. Create Enemy Laser Prefab
+            // 7. Create Enemy Laser Prefab
             Sprite enemyLaserSprite = LoadSprite($"{KenneyBasePath}/PNG/Lasers/laserRed01.png");
             GameObject enemyLaserPrefab = CreateEnemyLaserPrefab(enemyLaserSprite);
 
-            // 6. Create Enemy Prefabs
+            // 8. Create Boss UFO Prefab
+            Sprite bossSprite = LoadSprite($"{KenneyBasePath}/PNG/ufoRed.png");
+            GameObject bossPrefab = CreateBossPrefab(bossSprite, enemyLaserPrefab, explosionPrefab, floatingScorePrefab, powerUpPrefabs);
+
+            // 9. Create Enemy Prefabs
             List<GameObject> enemyPrefabs = new List<GameObject>();
 
             // Ships (can shoot red lasers)
-            GameObject enemyRed = CreateEnemyPrefab("Enemy_Red", $"{KenneyBasePath}/PNG/Enemies/enemyRed1.png", 3.2f, 0f, 15, explosionPrefab, true, enemyLaserPrefab);
+            GameObject enemyRed = CreateEnemyPrefab("Enemy_Red", $"{KenneyBasePath}/PNG/Enemies/enemyRed1.png", 3.2f, 0f, 15, explosionPrefab, true, enemyLaserPrefab, floatingScorePrefab, powerUpPrefabs);
             if (enemyRed != null) enemyPrefabs.Add(enemyRed);
 
-            GameObject enemyGreen = CreateEnemyPrefab("Enemy_Green", $"{KenneyBasePath}/PNG/Enemies/enemyGreen1.png", 3.6f, 0f, 20, explosionPrefab, true, enemyLaserPrefab);
+            GameObject enemyGreen = CreateEnemyPrefab("Enemy_Green", $"{KenneyBasePath}/PNG/Enemies/enemyGreen1.png", 3.6f, 0f, 20, explosionPrefab, true, enemyLaserPrefab, floatingScorePrefab, powerUpPrefabs);
             if (enemyGreen != null) enemyPrefabs.Add(enemyGreen);
 
-            GameObject enemyBlue = CreateEnemyPrefab("Enemy_Blue", $"{KenneyBasePath}/PNG/Enemies/enemyBlue1.png", 4.0f, 0f, 25, explosionPrefab, true, enemyLaserPrefab);
+            GameObject enemyBlue = CreateEnemyPrefab("Enemy_Blue", $"{KenneyBasePath}/PNG/Enemies/enemyBlue1.png", 4.0f, 0f, 25, explosionPrefab, true, enemyLaserPrefab, floatingScorePrefab, powerUpPrefabs);
             if (enemyBlue != null) enemyPrefabs.Add(enemyBlue);
 
             // Meteors (do not shoot, but rotate)
-            GameObject meteorBig = CreateEnemyPrefab("Meteor_Big", $"{KenneyBasePath}/PNG/Meteors/meteorBrown_big1.png", 2.5f, 45f, 10, explosionPrefab, false, null);
+            GameObject meteorBig = CreateEnemyPrefab("Meteor_Big", $"{KenneyBasePath}/PNG/Meteors/meteorBrown_big1.png", 2.5f, 45f, 10, explosionPrefab, false, null, floatingScorePrefab, powerUpPrefabs);
             if (meteorBig != null) enemyPrefabs.Add(meteorBig);
 
-            GameObject meteorMed = CreateEnemyPrefab("Meteor_Med", $"{KenneyBasePath}/PNG/Meteors/meteorBrown_med1.png", 3.2f, -60f, 15, explosionPrefab, false, null);
+            GameObject meteorMed = CreateEnemyPrefab("Meteor_Med", $"{KenneyBasePath}/PNG/Meteors/meteorBrown_med1.png", 3.2f, -60f, 15, explosionPrefab, false, null, floatingScorePrefab, powerUpPrefabs);
             if (meteorMed != null) enemyPrefabs.Add(meteorMed);
 
-            GameObject meteorGrey = CreateEnemyPrefab("Meteor_Grey", $"{KenneyBasePath}/PNG/Meteors/meteorGrey_big1.png", 2.8f, 30f, 10, explosionPrefab, false, null);
+            GameObject meteorGrey = CreateEnemyPrefab("Meteor_Grey", $"{KenneyBasePath}/PNG/Meteors/meteorGrey_big1.png", 2.8f, 30f, 10, explosionPrefab, false, null, floatingScorePrefab, powerUpPrefabs);
             if (meteorGrey != null) enemyPrefabs.Add(meteorGrey);
 
-            // 7. Create Player Prefab
+            // 10. Create Player Prefab
             Sprite playerSprite = LoadSprite($"{KenneyBasePath}/PNG/playerShip1_blue.png");
-            GameObject playerPrefab = CreatePlayerPrefab(playerSprite, laserPrefab, explosionPrefab);
+            GameObject playerPrefab = CreatePlayerPrefab(playerSprite, laserPrefab, explosionPrefab, floatingScorePrefab);
 
-            // 8. Setup Scene GameObjects
-            SetupScene(playerPrefab, laserPrefab, enemyPrefabs.ToArray(), shootClip, enemyShootClip, explosionClip, shieldDownClip, gameOverClip, buttonClickClip, gameFont, greenBtnSprite, blueBtnSprite, redBtnSprite, heartSprite);
+            // 11. Setup Scene GameObjects
+            SetupScene(playerPrefab, laserPrefab, enemyPrefabs.ToArray(), bossPrefab, shootClip, enemyShootClip, explosionClip, shieldDownClip, powerUpClip, gameOverClip, buttonClickClip, gameFont, greenBtnSprite, blueBtnSprite, redBtnSprite, heartSprite);
 
             AssetDatabase.SaveAssets();
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
@@ -257,7 +308,131 @@ namespace SpaceDefender.Editor
             return prefab;
         }
 
-        private static GameObject CreateEnemyPrefab(string name, string spritePath, float speed, float rotSpeed, int score, GameObject explosionVFX, bool canShoot, GameObject enemyLaserPrefab)
+        private static GameObject CreateFloatingScorePrefab(Font font)
+        {
+            string path = $"{PrefabFolderPath}/FloatingScore.prefab";
+
+            GameObject go = new GameObject("FloatingScore");
+            TextMesh tm = go.AddComponent<TextMesh>();
+            tm.text = "+10";
+            if (font != null)
+            {
+                tm.font = font;
+                MeshRenderer mr = go.GetComponent<MeshRenderer>();
+                if (mr != null) mr.sharedMaterial = font.material;
+            }
+            tm.fontSize = 36;
+            tm.characterSize = 0.15f;
+            tm.alignment = TextAlignment.Center;
+            tm.anchor = TextAnchor.MiddleCenter;
+            tm.color = new Color(1f, 0.92f, 0.23f, 1f);
+
+            MeshRenderer renderer = go.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                renderer.sortingOrder = 30;
+            }
+
+            FloatingScore fs = go.AddComponent<FloatingScore>();
+            fs.floatSpeed = 2.0f;
+            fs.fadeDuration = 0.75f;
+            fs.defaultColor = new Color(1f, 0.92f, 0.23f, 1f);
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+            return prefab;
+        }
+
+        private static GameObject CreatePowerUpPrefab(string name, string spritePath, PowerUpType type)
+        {
+            string path = $"{PrefabFolderPath}/{name}.prefab";
+
+            GameObject go = new GameObject(name);
+            SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = LoadSprite(spritePath);
+            sr.sortingOrder = 8;
+
+            CircleCollider2D col = go.AddComponent<CircleCollider2D>();
+            col.isTrigger = true;
+            if (sr.sprite != null)
+            {
+                col.radius = Mathf.Min(sr.sprite.bounds.extents.x, sr.sprite.bounds.extents.y) * 0.9f;
+            }
+
+            Rigidbody2D rb = go.AddComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Kinematic;
+
+            PowerUp pup = go.AddComponent<PowerUp>();
+            pup.powerUpType = type;
+            pup.fallSpeed = 2.2f;
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+            return prefab;
+        }
+
+        private static GameObject CreateBossPrefab(
+            Sprite ufoSprite,
+            GameObject enemyLaserPrefab,
+            GameObject explosionPrefab,
+            GameObject floatingScorePrefab,
+            GameObject[] powerUpPrefabs)
+        {
+            string path = $"{PrefabFolderPath}/Boss_UFO.prefab";
+
+            GameObject go = new GameObject("Boss_UFO");
+            go.transform.localScale = new Vector3(1.5f, 1.5f, 1f);
+
+            SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite = ufoSprite;
+            sr.sortingOrder = 6;
+
+            CircleCollider2D col = go.AddComponent<CircleCollider2D>();
+            col.isTrigger = true;
+            if (ufoSprite != null)
+            {
+                col.radius = Mathf.Min(ufoSprite.bounds.extents.x, ufoSprite.bounds.extents.y) * 0.9f;
+            }
+
+            Rigidbody2D rb = go.AddComponent<Rigidbody2D>();
+            rb.bodyType = RigidbodyType2D.Kinematic;
+
+            GameObject leftFire = new GameObject("LeftFirePoint");
+            leftFire.transform.SetParent(go.transform);
+            leftFire.transform.localPosition = new Vector3(-0.45f, -0.3f, 0f);
+
+            GameObject rightFire = new GameObject("RightFirePoint");
+            rightFire.transform.SetParent(go.transform);
+            rightFire.transform.localPosition = new Vector3(0.45f, -0.3f, 0f);
+
+            BossController boss = go.AddComponent<BossController>();
+            boss.maxHP = 20;
+            boss.currentHP = 20;
+            boss.scoreValue = 100;
+            boss.bossName = "RED UFO MOTHERSHIP";
+            boss.enemyLaserPrefab = enemyLaserPrefab;
+            boss.leftFirePoint = leftFire.transform;
+            boss.rightFirePoint = rightFire.transform;
+            boss.explosionPrefab = explosionPrefab;
+            boss.floatingScorePrefab = floatingScorePrefab;
+            boss.dropPowerUpPrefabs = powerUpPrefabs;
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
+            Object.DestroyImmediate(go);
+            return prefab;
+        }
+
+        private static GameObject CreateEnemyPrefab(
+            string name,
+            string spritePath,
+            float speed,
+            float rotSpeed,
+            int score,
+            GameObject explosionVFX,
+            bool canShoot,
+            GameObject enemyLaserPrefab,
+            GameObject floatingScorePrefab,
+            GameObject[] powerUpPrefabs)
         {
             string path = $"{PrefabFolderPath}/{name}.prefab";
 
@@ -283,13 +458,20 @@ namespace SpaceDefender.Editor
             enemy.explosionPrefab = explosionVFX;
             enemy.canShoot = canShoot;
             enemy.enemyLaserPrefab = enemyLaserPrefab;
+            enemy.floatingScorePrefab = floatingScorePrefab;
+            enemy.powerUpPrefabs = powerUpPrefabs;
+            enemy.dropChance = 0.25f;
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
             Object.DestroyImmediate(go);
             return prefab;
         }
 
-        private static GameObject CreatePlayerPrefab(Sprite sprite, GameObject laserPrefab, GameObject explosionVFX)
+        private static GameObject CreatePlayerPrefab(
+            Sprite sprite,
+            GameObject laserPrefab,
+            GameObject explosionVFX,
+            GameObject floatingScorePrefab)
         {
             string path = $"{PrefabFolderPath}/Player.prefab";
 
@@ -313,6 +495,17 @@ namespace SpaceDefender.Editor
             GameObject firePoint = new GameObject("FirePoint");
             firePoint.transform.SetParent(go.transform);
             firePoint.transform.localPosition = new Vector3(0, 0.6f, 0);
+
+            // Shield visual child object
+            GameObject shieldObj = new GameObject("ShieldVisual");
+            shieldObj.transform.SetParent(go.transform);
+            shieldObj.transform.localPosition = Vector3.zero;
+            shieldObj.transform.localScale = new Vector3(1.15f, 1.15f, 1f);
+            SpriteRenderer shieldSr = shieldObj.AddComponent<SpriteRenderer>();
+            shieldSr.sprite = LoadSprite($"{KenneyBasePath}/PNG/Effects/shield1.png");
+            shieldSr.color = new Color(0.3f, 0.85f, 1f, 0.85f);
+            shieldSr.sortingOrder = 12;
+            shieldObj.SetActive(false);
 
             // Thruster flame particles
             GameObject thruster = new GameObject("ThrusterParticles");
@@ -352,6 +545,8 @@ namespace SpaceDefender.Editor
             pc.laserPrefab = laserPrefab;
             pc.firePoint = firePoint.transform;
             pc.explosionPrefab = explosionVFX;
+            pc.shieldVisual = shieldObj;
+            pc.floatingScorePrefab = floatingScorePrefab;
             pc.maxLives = 3;
             pc.currentLives = 3;
 
@@ -364,10 +559,12 @@ namespace SpaceDefender.Editor
             GameObject playerPrefab,
             GameObject laserPrefab,
             GameObject[] enemyPrefabs,
+            GameObject bossPrefab,
             AudioClip shootClip,
             AudioClip enemyShootClip,
             AudioClip explosionClip,
             AudioClip shieldDownClip,
+            AudioClip powerUpClip,
             AudioClip gameOverClip,
             AudioClip buttonClickClip,
             Font gameFont,
@@ -390,6 +587,11 @@ namespace SpaceDefender.Editor
             cam.backgroundColor = new Color(0.04f, 0.04f, 0.12f, 1f);
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.transform.position = new Vector3(0, 0, -10);
+
+            if (cam.GetComponent<CameraShake>() == null)
+            {
+                cam.gameObject.AddComponent<CameraShake>();
+            }
 
             // Clean up old instances
             string[] cleanNames = { "Player", "BackgroundScroller", "EnemySpawner", "GameManager", "AudioManager", "UIManager", "Canvas", "EventSystem" };
@@ -439,6 +641,7 @@ namespace SpaceDefender.Editor
             GameObject spawnerObj = new GameObject("EnemySpawner");
             EnemySpawner spawner = spawnerObj.AddComponent<EnemySpawner>();
             spawner.enemyPrefabs = enemyPrefabs;
+            spawner.bossPrefab = bossPrefab;
             spawner.minSpawnDelay = 0.8f;
             spawner.maxSpawnDelay = 1.6f;
 
@@ -449,6 +652,7 @@ namespace SpaceDefender.Editor
             audioMgr.enemyShootClip = enemyShootClip;
             audioMgr.explosionClip = explosionClip;
             audioMgr.shieldDownClip = shieldDownClip;
+            audioMgr.powerUpClip = powerUpClip;
             audioMgr.gameOverClip = gameOverClip;
             audioMgr.buttonClickClip = buttonClickClip;
 
@@ -547,6 +751,91 @@ namespace SpaceDefender.Editor
             pBtnRect.pivot = new Vector2(1, 1);
             Button pauseBtn = pauseBtnObj.GetComponent<Button>();
 
+            // Boss Bar HUD (Top Center)
+            GameObject bossBarObj = new GameObject("BossBarPanel");
+            bossBarObj.transform.SetParent(inGameHUD.transform, false);
+            Image bossBarBg = bossBarObj.AddComponent<Image>();
+            bossBarBg.color = new Color(0.08f, 0.08f, 0.16f, 0.88f);
+            RectTransform bbRect = bossBarObj.GetComponent<RectTransform>();
+            bbRect.anchorMin = new Vector2(0.5f, 1f);
+            bbRect.anchorMax = new Vector2(0.5f, 1f);
+            bbRect.pivot = new Vector2(0.5f, 1f);
+            bbRect.anchoredPosition = new Vector2(0, -40);
+            bbRect.sizeDelta = new Vector2(500, 85);
+
+            GameObject bTitleObj = new GameObject("BossTitle");
+            bTitleObj.transform.SetParent(bossBarObj.transform, false);
+            Text bTitleText = bTitleObj.AddComponent<Text>();
+            bTitleText.text = "RED UFO MOTHERSHIP";
+            if (gameFont != null) bTitleText.font = gameFont;
+            bTitleText.fontSize = 20;
+            bTitleText.alignment = TextAnchor.MiddleCenter;
+            bTitleText.color = new Color(1f, 0.35f, 0.35f);
+            bTitleObj.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.9f);
+            RectTransform btRect = bTitleText.rectTransform;
+            btRect.anchoredPosition = new Vector2(0, 18);
+            btRect.sizeDelta = new Vector2(480, 30);
+
+            // Slider
+            GameObject sliderObj = new GameObject("BossHPSlider");
+            sliderObj.transform.SetParent(bossBarObj.transform, false);
+            Slider hpSlider = sliderObj.AddComponent<Slider>();
+            RectTransform sRect = sliderObj.GetComponent<RectTransform>();
+            sRect.anchoredPosition = new Vector2(0, -16);
+            sRect.sizeDelta = new Vector2(440, 24);
+
+            GameObject sBgObj = new GameObject("Background");
+            sBgObj.transform.SetParent(sliderObj.transform, false);
+            Image sBgImg = sBgObj.AddComponent<Image>();
+            sBgImg.color = new Color(0.35f, 0.08f, 0.08f);
+            RectTransform sBgRect = sBgObj.GetComponent<RectTransform>();
+            sBgRect.anchorMin = Vector2.zero;
+            sBgRect.anchorMax = Vector2.one;
+            sBgRect.offsetMin = Vector2.zero;
+            sBgRect.offsetMax = Vector2.zero;
+
+            GameObject fillArea = new GameObject("Fill Area");
+            fillArea.transform.SetParent(sliderObj.transform, false);
+            RectTransform faRect = fillArea.AddComponent<RectTransform>();
+            faRect.anchorMin = Vector2.zero;
+            faRect.anchorMax = Vector2.one;
+            faRect.offsetMin = Vector2.zero;
+            faRect.offsetMax = Vector2.zero;
+
+            GameObject fillObj = new GameObject("Fill");
+            fillObj.transform.SetParent(fillArea.transform, false);
+            Image fillImg = fillObj.AddComponent<Image>();
+            fillImg.color = new Color(1f, 0.2f, 0.25f);
+            RectTransform fRect = fillObj.GetComponent<RectTransform>();
+            fRect.anchorMin = Vector2.zero;
+            fRect.anchorMax = Vector2.one;
+            fRect.offsetMin = Vector2.zero;
+            fRect.offsetMax = Vector2.zero;
+
+            hpSlider.targetGraphic = sBgImg;
+            hpSlider.fillRect = fRect;
+            hpSlider.minValue = 0f;
+            hpSlider.maxValue = 1f;
+            hpSlider.value = 1f;
+
+            // Text on slider
+            GameObject hpTextObj = new GameObject("HPText");
+            hpTextObj.transform.SetParent(sliderObj.transform, false);
+            Text hpText = hpTextObj.AddComponent<Text>();
+            hpText.text = "20 / 20";
+            if (gameFont != null) hpText.font = gameFont;
+            hpText.fontSize = 14;
+            hpText.alignment = TextAnchor.MiddleCenter;
+            hpText.color = Color.white;
+            hpTextObj.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.9f);
+            RectTransform hpTextRect = hpText.rectTransform;
+            hpTextRect.anchorMin = Vector2.zero;
+            hpTextRect.anchorMax = Vector2.one;
+            hpTextRect.offsetMin = Vector2.zero;
+            hpTextRect.offsetMax = Vector2.zero;
+
+            bossBarObj.SetActive(false);
+
             // ================== B. MAIN MENU PANEL ==================
             GameObject mainMenuPanel = new GameObject("MainMenuPanel");
             mainMenuPanel.transform.SetParent(canvasObj.transform, false);
@@ -618,10 +907,10 @@ namespace SpaceDefender.Editor
             GameObject modalContent = new GameObject("ModalContent");
             modalContent.transform.SetParent(modalObj.transform, false);
             Text mc = modalContent.AddComponent<Text>();
-            mc.text = "MOVE:\nA / D or Left / Right Arrows\n\nSHOOT:\nSpacebar or Left Mouse Click\n\nPAUSE:\nEsc or Pause button\n\nLIVES:\n3 Hearts - survive oncoming enemies and dodge red enemy lasers!\n\nHIGH SCORE:\nStored automatically.";
+            mc.text = "MOVE:\nA / D or Left / Right Arrows\n\nSHOOT:\nSpacebar or Left Mouse Click\n\nPOWER-UPS:\nBolt: Triple Laser (10s)\nShield: Absorbs 1 Hit\nStar: Restores 1 Heart\n\nMINI-BOSS:\nSurvive & defeat the UFO Mothership!\n\nPAUSE: Esc or Pause button";
             if (gameFont != null) mc.font = gameFont;
-            mc.fontSize = 24;
-            mc.lineSpacing = 1.3f;
+            mc.fontSize = 22;
+            mc.lineSpacing = 1.25f;
             mc.alignment = TextAnchor.MiddleCenter;
             mc.color = Color.white;
             modalContent.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 30);
@@ -743,6 +1032,10 @@ namespace SpaceDefender.Editor
             uiManager.highScoreText = hsText;
             uiManager.heartImages = heartList.ToArray();
             uiManager.pauseButton = pauseBtn;
+            uiManager.bossBarPanel = bossBarObj;
+            uiManager.bossHPSlider = hpSlider;
+            uiManager.bossNameText = bTitleText;
+            uiManager.bossHPText = hpText;
 
             uiManager.pausePanel = pausePanel;
             uiManager.resumeButton = resumeBtn;
