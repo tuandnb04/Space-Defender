@@ -3,18 +3,9 @@ using UnityEngine;
 public class AudioManager : MonoBehaviour
 {
     private static AudioManager _instance;
-    public static AudioManager Instance
-    {
-        get
-        {
-            if (!_instance) _instance = UnityEngine.Object.FindAnyObjectByType<AudioManager>(FindObjectsInactive.Include);
-            return _instance;
-        }
-        private set => _instance = value;
-    }
 
-    [Header("Audio Clips")]
-    public AudioClip shootClip;
+    [Header("Audio Clips")] public AudioClip shootClip;
+
     public AudioClip enemyShootClip;
     public AudioClip explosionClip;
     public AudioClip shieldDownClip;
@@ -25,19 +16,23 @@ public class AudioManager : MonoBehaviour
     public AudioClip comboClip;
     public AudioClip bgmClip;
 
-    [Header("Audio Sources")]
-    public AudioSource sfxSource;
+    [Header("Audio Sources")] public AudioSource sfxSource;
+
     public AudioSource bgmSource;
 
-    [Header("Volume & Settings")]
-    public float bgmVolume = 0.45f;
+    [Header("Volume & Settings")] public float bgmVolume = 0.45f;
+
     public float sfxVolume = 0.85f;
     public bool isMuted;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStaticState()
+    public static AudioManager Instance
     {
-        Instance = null;
+        get
+        {
+            if (!_instance) _instance = FindAnyObjectByType<AudioManager>(FindObjectsInactive.Include);
+            return _instance;
+        }
+        private set => _instance = value;
     }
 
     private void Awake()
@@ -49,17 +44,11 @@ public class AudioManager : MonoBehaviour
         sfxVolume = PlayerPrefs.GetFloat("SD_SFX_VOL", 0.85f);
         isMuted = PlayerPrefs.GetInt("SD_MUTED", 0) == 1;
 
-        if (sfxSource == null)
-        {
-            sfxSource = gameObject.AddComponent<AudioSource>();
-        }
+        if (sfxSource == null) sfxSource = gameObject.AddComponent<AudioSource>();
         sfxSource.playOnAwake = false;
         sfxSource.volume = isMuted ? 0f : sfxVolume;
 
-        if (bgmSource == null)
-        {
-            bgmSource = gameObject.AddComponent<AudioSource>();
-        }
+        if (bgmSource == null) bgmSource = gameObject.AddComponent<AudioSource>();
         bgmSource.loop = true;
         bgmSource.playOnAwake = false;
         bgmSource.volume = isMuted ? 0f : bgmVolume;
@@ -67,93 +56,67 @@ public class AudioManager : MonoBehaviour
 
     private void Start()
     {
-        if (bgmClip == null)
-        {
-            bgmClip = GenerateProceduralSpaceBGM();
-        }
+        if (bgmClip == null) bgmClip = GenerateProceduralSpaceBGM();
 
         PlayBGM();
     }
 
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        Instance = null;
+    }
+
     public void PlayShoot()
     {
-        if (shootClip && sfxSource)
-        {
-            sfxSource.PlayOneShot(shootClip, 0.75f);
-        }
+        if (shootClip && sfxSource) sfxSource.PlayOneShot(shootClip, 0.75f);
     }
 
     public void PlayEnemyShoot()
     {
-        if (enemyShootClip && sfxSource)
-        {
-            sfxSource.PlayOneShot(enemyShootClip, 0.65f);
-        }
+        if (enemyShootClip && sfxSource) sfxSource.PlayOneShot(enemyShootClip, 0.65f);
     }
 
     public void PlayExplosion()
     {
-        if (explosionClip && sfxSource)
-        {
-            sfxSource.PlayOneShot(explosionClip, 0.9f);
-        }
+        if (explosionClip && sfxSource) sfxSource.PlayOneShot(explosionClip, 0.9f);
     }
 
     public void PlayShieldDown()
     {
-        if (shieldDownClip != null && sfxSource != null)
-        {
-            sfxSource.PlayOneShot(shieldDownClip, 0.95f);
-        }
+        if (shieldDownClip != null && sfxSource != null) sfxSource.PlayOneShot(shieldDownClip, 0.95f);
     }
 
     public void PlayPowerUp()
     {
-        if (powerUpClip && sfxSource)
-        {
-            sfxSource.PlayOneShot(powerUpClip, 1.0f);
-        }
+        if (powerUpClip && sfxSource) sfxSource.PlayOneShot(powerUpClip, 1.0f);
     }
 
     public void PlayGameOver()
     {
-        if (gameOverClip != null && sfxSource != null)
-        {
-            sfxSource.PlayOneShot(gameOverClip, 1.0f);
-        }
+        if (gameOverClip != null && sfxSource != null) sfxSource.PlayOneShot(gameOverClip, 1.0f);
     }
 
     public void PlayButtonClick()
     {
-        if (buttonClickClip != null && sfxSource != null)
-        {
-            sfxSource.PlayOneShot(buttonClickClip, 0.8f);
-        }
+        if (buttonClickClip != null && sfxSource != null) sfxSource.PlayOneShot(buttonClickClip, 0.8f);
     }
 
     public void PlayEmpBomb()
     {
         if (empBombClip && sfxSource)
-        {
             sfxSource.PlayOneShot(empBombClip, 1.0f);
-        }
         else if (sfxSource)
-        {
             // Fallback to explosion or twoTone
-            if (explosionClip) sfxSource.PlayOneShot(explosionClip, 1.0f);
-        }
+            if (explosionClip)
+                sfxSource.PlayOneShot(explosionClip, 1.0f);
     }
 
     public void PlayCombo()
     {
         if (comboClip != null && sfxSource != null)
-        {
             sfxSource.PlayOneShot(comboClip, 0.9f);
-        }
-        else if (powerUpClip != null && sfxSource != null)
-        {
-            sfxSource.PlayOneShot(powerUpClip, 0.6f);
-        }
+        else if (powerUpClip != null && sfxSource != null) sfxSource.PlayOneShot(powerUpClip, 0.6f);
     }
 
     public void SetBGMVolume(float volume)
@@ -162,10 +125,7 @@ public class AudioManager : MonoBehaviour
         PlayerPrefs.SetFloat("SD_BGM_VOL", bgmVolume);
         PlayerPrefs.Save();
 
-        if (bgmSource != null)
-        {
-            bgmSource.volume = isMuted ? 0f : bgmVolume;
-        }
+        if (bgmSource != null) bgmSource.volume = isMuted ? 0f : bgmVolume;
     }
 
     public void SetSfxVolume(float volume)
@@ -174,10 +134,7 @@ public class AudioManager : MonoBehaviour
         PlayerPrefs.SetFloat("SD_SFX_VOL", sfxVolume);
         PlayerPrefs.Save();
 
-        if (sfxSource != null)
-        {
-            sfxSource.volume = isMuted ? 0f : sfxVolume;
-        }
+        if (sfxSource != null) sfxSource.volume = isMuted ? 0f : sfxVolume;
     }
 
     public void SetMute(bool muted)
@@ -186,32 +143,20 @@ public class AudioManager : MonoBehaviour
         PlayerPrefs.SetInt("SD_MUTED", isMuted ? 1 : 0);
         PlayerPrefs.Save();
 
-        if (bgmSource != null)
-        {
-            bgmSource.volume = isMuted ? 0f : bgmVolume;
-        }
-        if (sfxSource != null)
-        {
-            sfxSource.volume = isMuted ? 0f : sfxVolume;
-        }
+        if (bgmSource != null) bgmSource.volume = isMuted ? 0f : bgmVolume;
+        if (sfxSource != null) sfxSource.volume = isMuted ? 0f : sfxVolume;
     }
 
     private void PlayBGM()
     {
         if (bgmSource == null || bgmClip == null) return;
         bgmSource.clip = bgmClip;
-        if (!bgmSource.isPlaying)
-        {
-            bgmSource.Play();
-        }
+        if (!bgmSource.isPlaying) bgmSource.Play();
     }
 
     public void StopBGM()
     {
-        if (bgmSource != null && bgmSource.isPlaying)
-        {
-            bgmSource.Stop();
-        }
+        if (bgmSource != null && bgmSource.isPlaying) bgmSource.Stop();
     }
 
     private static AudioClip GenerateProceduralSpaceBGM()
@@ -239,9 +184,10 @@ public class AudioManager : MonoBehaviour
                 var lfo = 0.5f + 0.5f * Mathf.Sin(t * (0.2f + c * 0.15f) * twoPi);
                 val += 0.08f * lfo * Mathf.Sin(t * freqs[c] * twoPi);
             }
+
             // Subtle arpeggiator pulse
             var arpIndex = Mathf.Floor(t * 4f) % freqs.Length;
-            var arpEnv = Mathf.Exp(-((t * 4f) % 1f) * 4f);
+            var arpEnv = Mathf.Exp(-(t * 4f % 1f) * 4f);
             val += 0.12f * arpEnv * Mathf.Sin(t * freqs[(int)arpIndex] * 2f * twoPi);
 
             samples[i] = Mathf.Clamp(val * envelope * 0.7f, -1f, 1f);

@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Text;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -6,75 +8,66 @@ using UnityEngine.UI;
 public class UIManager : MonoBehaviour
 {
     private static UIManager _instance;
-    public static UIManager Instance
-    {
-        get
-        {
-            if (!_instance) _instance = UnityEngine.Object.FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
-            return _instance;
-        }
-        private set => _instance = value;
-    }
 
-    [Header("Main Menu Panel")]
-    public GameObject mainMenuPanel;
+    [Header("Main Menu Panel")] public GameObject mainMenuPanel;
+
     public Button playButton;
     public Button howToPlayButton;
     public GameObject howToPlayModal;
     public Button closeHowToPlayButton;
     public Button exitButton;
 
-    [Header("Main Menu Extras")]
-    public Button openHangarButton;
+    [Header("Main Menu Extras")] public Button openHangarButton;
+
     public Button openAchievementsButton;
     public Button openSettingsButton;
 
-    [Header("In-Game HUD")]
-    public GameObject inGameHUD;
+    [Header("In-Game HUD")] public GameObject inGameHUD;
+
     public Text scoreText;
     public Text highScoreText;
     public Image[] heartImages;
     public Button pauseButton;
 
-    [Header("Bombs HUD")]
-    public Text bombText;
+    [Header("Bombs HUD")] public Text bombText;
+
     public Button bombButton;
 
-    [Header("Combo HUD")]
-    public GameObject comboPanel;
+    [Header("Combo HUD")] public GameObject comboPanel;
+
     public Text comboText;
     public Slider comboSlider;
 
-    [Header("Boss HUD")]
-    public GameObject bossBarPanel;
+    [Header("Boss HUD")] public GameObject bossBarPanel;
+
     [FormerlySerializedAs("bossHPSlider")] public Slider bossHpSlider;
     public Text bossNameText;
     [FormerlySerializedAs("bossHPText")] public Text bossHpText;
 
-    [Header("Pause Panel")]
-    public GameObject pausePanel;
+    [Header("Pause Panel")] public GameObject pausePanel;
+
     public Button resumeButton;
     public Button restartButton;
     public Button pauseSettingsButton;
     public Button pauseMainMenuButton;
 
-    [Header("Game Over Screen")]
-    public GameObject gameOverPanel;
+    [Header("Game Over Screen")] public GameObject gameOverPanel;
+
     public Text finalScoreText;
     public Text gameOverHighScoreText;
     public GameObject newRecordObject;
     public Button replayButton;
     public Button gameOverMainMenuButton;
 
-    [Header("Settings Modal")]
-    public GameObject settingsModal;
+    [Header("Settings Modal")] public GameObject settingsModal;
+
     public Slider bgmSlider;
     public Slider sfxSlider;
     public Toggle muteToggle;
     public Button closeSettingsButton;
 
-    [Header("Hangar Modal")]
-    public GameObject hangarModal;
+    [Header("Hangar Modal")] public GameObject hangarModal;
+
     public Image shipPreviewImage;
     public Text shipNameText;
     public Text shipStatsText;
@@ -85,32 +78,38 @@ public class UIManager : MonoBehaviour
     public Button closeHangarButton;
     public Sprite[] hangarShipSprites;
 
-    [Header("Achievements Modal")]
-    public GameObject achievementsModal;
+    [Header("Achievements Modal")] public GameObject achievementsModal;
+
     public Text achievementsListText;
     public Button closeAchievementsButton;
 
-    [Header("Achievement Toast")]
-    public GameObject achievementToast;
+    [Header("Achievement Toast")] public GameObject achievementToast;
+
     public Text toastTitleText;
     public Text toastDescText;
 
-    private int _previewShipIndex;
-    private Coroutine _toastCoroutine;
-
     // Static Ship Info for Hangar
-    private readonly (string name, string speed, string fireRate, string bombs, string perk)[] _shipInfo = new[]
+    private readonly (string name, string speed, string fireRate, string bombs, string perk)[] _shipInfo =
     {
-        ("BLUE VANGUARD", "9.5 (Balanced)", "0.22s (Standard)", "2 Bombs", "All-around fleet fighter with balanced stats"),
-        ("ORANGE INTERCEPTOR", "12.0 (High Speed)", "0.22s (Standard)", "1 Bomb", "Supersonic thrusters for agile evasion"),
+        ("BLUE VANGUARD", "9.5 (Balanced)", "0.22s (Standard)", "2 Bombs",
+            "All-around fleet fighter with balanced stats"),
+        ("ORANGE INTERCEPTOR", "12.0 (High Speed)", "0.22s (Standard)", "1 Bomb",
+            "Supersonic thrusters for agile evasion"),
         ("GREEN STRIKER", "9.0 (Standard)", "0.16s (Rapid Fire)", "2 Bombs", "Dual rapid-fire plasma cannons"),
         ("RED DREADNOUGHT", "8.2 (Heavy Armor)", "0.24s (Heavy)", "3 Bombs", "Deploys with ENERGY SHIELD & 3 Bombs")
     };
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-    private static void ResetStaticState()
+    private int _previewShipIndex;
+    private Coroutine _toastCoroutine;
+
+    public static UIManager Instance
     {
-        Instance = null;
+        get
+        {
+            if (!_instance) _instance = FindAnyObjectByType<UIManager>(FindObjectsInactive.Include);
+            return _instance;
+        }
+        private set => _instance = value;
     }
 
     private void Awake()
@@ -123,6 +122,12 @@ public class UIManager : MonoBehaviour
     private void Start()
     {
         WireButtonListeners();
+    }
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetStaticState()
+    {
+        Instance = null;
     }
 
     private void WireButtonListeners()
@@ -250,7 +255,7 @@ public class UIManager : MonoBehaviour
         if (bgmSlider != null)
         {
             bgmSlider.onValueChanged.RemoveAllListeners();
-            bgmSlider.onValueChanged.AddListener((val) =>
+            bgmSlider.onValueChanged.AddListener(val =>
             {
                 if (AudioManager.Instance != null) AudioManager.Instance.SetBGMVolume(val);
             });
@@ -259,7 +264,7 @@ public class UIManager : MonoBehaviour
         if (sfxSlider != null)
         {
             sfxSlider.onValueChanged.RemoveAllListeners();
-            sfxSlider.onValueChanged.AddListener((val) =>
+            sfxSlider.onValueChanged.AddListener(val =>
             {
                 if (AudioManager.Instance != null) AudioManager.Instance.SetSfxVolume(val);
             });
@@ -268,7 +273,7 @@ public class UIManager : MonoBehaviour
         if (muteToggle != null)
         {
             muteToggle.onValueChanged.RemoveAllListeners();
-            muteToggle.onValueChanged.AddListener((val) =>
+            muteToggle.onValueChanged.AddListener(val =>
             {
                 if (AudioManager.Instance != null) AudioManager.Instance.SetMute(val);
             });
@@ -281,7 +286,7 @@ public class UIManager : MonoBehaviour
             {
                 if (AudioManager.Instance != null) AudioManager.Instance.PlayButtonClick();
 #if UNITY_EDITOR
-                UnityEditor.EditorApplication.isPlaying = false;
+                EditorApplication.isPlaying = false;
 #else
                     Application.Quit();
 #endif
@@ -294,7 +299,7 @@ public class UIManager : MonoBehaviour
             bombButton.onClick.RemoveAllListeners();
             bombButton.onClick.AddListener(() =>
             {
-                var player = Object.FindAnyObjectByType<PlayerController>();
+                var player = FindAnyObjectByType<PlayerController>();
                 if (player) player.UseBomb();
             });
         }
@@ -388,26 +393,17 @@ public class UIManager : MonoBehaviour
 
     public void ShowPausePanel(bool show)
     {
-        if (pausePanel)
-        {
-            pausePanel.SetActive(show);
-        }
+        if (pausePanel) pausePanel.SetActive(show);
     }
 
     private void ShowHowToPlay(bool show)
     {
-        if (howToPlayModal != null)
-        {
-            howToPlayModal.SetActive(show);
-        }
+        if (howToPlayModal != null) howToPlayModal.SetActive(show);
     }
 
     public void ShowSettings(bool show)
     {
-        if (settingsModal != null)
-        {
-            settingsModal.SetActive(show);
-        }
+        if (settingsModal != null) settingsModal.SetActive(show);
 
         if (show)
         {
@@ -448,18 +444,12 @@ public class UIManager : MonoBehaviour
 
     public void ShowHangar(bool show)
     {
-        if (mainMenuPanel != null)
-        {
-            mainMenuPanel.SetActive(!show);
-        }
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(!show);
 
         var player = PlayerController.Instance;
         if (player != null) player.gameObject.SetActive(!show);
 
-        if (hangarModal != null)
-        {
-            hangarModal.SetActive(show);
-        }
+        if (hangarModal != null) hangarModal.SetActive(show);
 
         if (!show) return;
         _previewShipIndex = PlayerPrefs.GetInt("SD_SELECTED_SHIP", 0);
@@ -486,14 +476,9 @@ public class UIManager : MonoBehaviour
         var selectedShip = PlayerPrefs.GetInt("SD_SELECTED_SHIP", 0);
 
         if (hangarShipSprites != null && _previewShipIndex < hangarShipSprites.Length && shipPreviewImage != null)
-        {
             shipPreviewImage.sprite = hangarShipSprites[_previewShipIndex];
-        }
 
-        if (shipNameText != null)
-        {
-            shipNameText.text = _shipInfo[_previewShipIndex].name;
-        }
+        if (shipNameText != null) shipNameText.text = _shipInfo[_previewShipIndex].name;
 
         if (shipStatsText != null)
         {
@@ -502,35 +487,21 @@ public class UIManager : MonoBehaviour
         }
 
         if (selectShipButtonText != null)
-        {
-            selectShipButtonText.text = (_previewShipIndex == selectedShip) ? "SELECTED" : "SELECT SHIP";
-        }
+            selectShipButtonText.text = _previewShipIndex == selectedShip ? "SELECTED" : "SELECT SHIP";
 
-        if (selectShipButton != null)
-        {
-            selectShipButton.interactable = (_previewShipIndex != selectedShip);
-        }
+        if (selectShipButton != null) selectShipButton.interactable = _previewShipIndex != selectedShip;
     }
 
     public void ShowAchievements(bool show)
     {
-        if (mainMenuPanel != null)
-        {
-            mainMenuPanel.SetActive(!show);
-        }
+        if (mainMenuPanel != null) mainMenuPanel.SetActive(!show);
 
         var player = PlayerController.Instance;
         if (player != null) player.gameObject.SetActive(!show);
 
-        if (achievementsModal != null)
-        {
-            achievementsModal.SetActive(show);
-        }
+        if (achievementsModal != null) achievementsModal.SetActive(show);
 
-        if (show)
-        {
-            RefreshAchievementsUI();
-        }
+        if (show) RefreshAchievementsUI();
     }
 
     private void RefreshAchievementsUI()
@@ -539,13 +510,14 @@ public class UIManager : MonoBehaviour
 
         if (AchievementManager.Instance == null) return;
         AchievementManager.Instance.EnsureInitialized();
-        var sb = new System.Text.StringBuilder();
+        var sb = new StringBuilder();
         foreach (var ach in AchievementManager.Instance.achievements)
         {
             var status = ach.isUnlocked ? "<color=#00FF88>UNLOCKED</color>" : "<color=#888888>LOCKED</color>";
             sb.AppendLine($"<b>{ach.title}</b> - {status}");
             sb.AppendLine($"<i>{ach.description}</i>\n");
         }
+
         achievementsListText.text = sb.ToString();
     }
 
@@ -553,10 +525,7 @@ public class UIManager : MonoBehaviour
     {
         if (!achievementToast) return;
 
-        if (_toastCoroutine != null)
-        {
-            StopCoroutine(_toastCoroutine);
-        }
+        if (_toastCoroutine != null) StopCoroutine(_toastCoroutine);
         _toastCoroutine = StartCoroutine(ToastRoutine(title, description));
     }
 
@@ -573,23 +542,14 @@ public class UIManager : MonoBehaviour
 
     public void UpdateBombs(int bombs)
     {
-        if (bombText)
-        {
-            bombText.text = $"BOMB [B]\nx{bombs}";
-        }
+        if (bombText) bombText.text = $"BOMB [B]\nx{bombs}";
 
-        if (bombButton)
-        {
-            bombButton.interactable = (bombs > 0);
-        }
+        if (bombButton) bombButton.interactable = bombs > 0;
     }
 
     public void UpdateCombo(int combo, int multiplier, float fillProgress)
     {
-        if (comboPanel)
-        {
-            comboPanel.SetActive(true);
-        }
+        if (comboPanel) comboPanel.SetActive(true);
 
         if (comboText)
         {
@@ -597,47 +557,32 @@ public class UIManager : MonoBehaviour
             comboText.color = ComboManager.GetComboColor(multiplier);
         }
 
-        if (comboSlider)
-        {
-            comboSlider.value = fillProgress;
-        }
+        if (comboSlider) comboSlider.value = fillProgress;
     }
 
     public void HideCombo()
     {
-        if (comboPanel)
-        {
-            comboPanel.SetActive(false);
-        }
+        if (comboPanel) comboPanel.SetActive(false);
     }
 
     public void ShowBossBar(bool show, string bossName = "RED UFO MOTHERSHIP")
     {
-        if (bossBarPanel)
-        {
-            bossBarPanel.SetActive(show);
-        }
+        if (bossBarPanel) bossBarPanel.SetActive(show);
 
-        if (bossNameText && show)
-        {
-            bossNameText.text = bossName;
-        }
+        if (bossNameText && show) bossNameText.text = bossName;
     }
 
     public void UpdateBossHp(int current, int max)
     {
-        if (bossHpSlider)
-        {
-            bossHpSlider.value = max > 0 ? (float)current / max : 0f;
-        }
+        if (bossHpSlider) bossHpSlider.value = max > 0 ? (float)current / max : 0f;
 
-        if (bossHpText)
-        {
-            bossHpText.text = $"{current} / {max}";
-        }
+        if (bossHpText) bossHpText.text = $"{current} / {max}";
     }
 
-    public void UpdateBossHP(int current, int max) => UpdateBossHp(current, max);
+    public void UpdateBossHP(int current, int max)
+    {
+        UpdateBossHp(current, max);
+    }
 
     public void ShowGameOver(int finalScore, int highScore, bool isNewRecord = false)
     {
@@ -646,33 +591,18 @@ public class UIManager : MonoBehaviour
         if (pausePanel != null) pausePanel.SetActive(false);
         if (gameOverPanel != null) gameOverPanel.SetActive(true);
 
-        if (finalScoreText != null)
-        {
-            finalScoreText.text = $"YOUR SCORE\n{finalScore}";
-        }
+        if (finalScoreText != null) finalScoreText.text = $"YOUR SCORE\n{finalScore}";
 
-        if (gameOverHighScoreText != null)
-        {
-            gameOverHighScoreText.text = $"BEST: {highScore}";
-        }
+        if (gameOverHighScoreText != null) gameOverHighScoreText.text = $"BEST: {highScore}";
 
-        if (newRecordObject != null)
-        {
-            newRecordObject.SetActive(isNewRecord);
-        }
+        if (newRecordObject != null) newRecordObject.SetActive(isNewRecord);
     }
 
     public void UpdateScore(int score, int highScore = 0)
     {
-        if (scoreText)
-        {
-            scoreText.text = $"SCORE\n{score:D4}";
-        }
+        if (scoreText) scoreText.text = $"SCORE\n{score:D4}";
 
-        if (highScoreText)
-        {
-            highScoreText.text = $"BEST: {highScore:D4}";
-        }
+        if (highScoreText) highScoreText.text = $"BEST: {highScore:D4}";
     }
 
     public void UpdateLives(int lives)
@@ -680,11 +610,7 @@ public class UIManager : MonoBehaviour
         if (heartImages == null) return;
 
         for (var i = 0; i < heartImages.Length; i++)
-        {
             if (heartImages[i] != null)
-            {
-                heartImages[i].enabled = (i < lives);
-            }
-        }
+                heartImages[i].enabled = i < lives;
     }
 }
