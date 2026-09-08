@@ -49,13 +49,13 @@ public class PlayerController : MonoBehaviour
     {
         get
         {
-            if (_instance == null) _instance = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
+            if (!_instance) _instance = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
             return _instance;
         }
         private set => _instance = value;
     }
 
-    private bool HasShield { get; set; }
+    public bool HasShield { get; private set; }
 
     private float TripleShotTimer { get; set; }
 

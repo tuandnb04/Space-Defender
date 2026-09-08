@@ -23,7 +23,7 @@ public class GameManager : MonoBehaviour
     public bool IsGameOver { get; private set; }
     public bool IsPaused { get; private set; }
 
-    public int Score { get; private set; }
+    private int Score { get; set; }
     private int HighScore { get; set; }
     private bool IsNewHighScore { get; set; }
 
@@ -133,6 +133,8 @@ public class GameManager : MonoBehaviour
             UIManager.Instance.UpdateLives(3);
         }
 
+        if (ComboManager.Instance) ComboManager.Instance.ResetCombo();
+
         // Find player and make active/reset
         var player = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
         if (player)
@@ -141,11 +143,20 @@ public class GameManager : MonoBehaviour
             player.ResetPlayer();
         }
 
-        // Activate spawner
+        // Activate spawner and start wave 1
         var spawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
         if (!spawner) return;
         spawner.gameObject.SetActive(true);
-        spawner.ClearAllEnemies();
+        spawner.StartWaveSequence();
+    }
+
+    public void AwardWaveBonus(int wave, int bonus)
+    {
+        AddScore(bonus);
+        var player = PlayerController.Instance;
+        if (!player || !player.floatingScorePrefab) return;
+        var p = player.transform.position + Vector3.up * 1.2f;
+        FloatingScore.SpawnText(player.floatingScorePrefab, p, $"WAVE {wave} CLEAR! +{bonus}", new Color(0.2f, 1f, 0.4f));
     }
 
     public void AddScore(int amount)
@@ -226,6 +237,8 @@ public class GameManager : MonoBehaviour
 
         var player = FindAnyObjectByType<PlayerController>(FindObjectsInactive.Include);
         if (player) player.gameObject.SetActive(false);
+
+        if (ComboManager.Instance) ComboManager.Instance.ResetCombo();
 
         if (UIManager.Instance) UIManager.Instance.ShowMainMenu();
     }

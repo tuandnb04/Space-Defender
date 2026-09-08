@@ -63,7 +63,7 @@ public class ComboManager : MonoBehaviour
         var finalScore = baseScore * Multiplier;
 
         // Check combo achievement
-        if (CurrentCombo >= 5 && AchievementManager.Instance != null)
+        if (CurrentCombo >= 5 && AchievementManager.Instance)
             AchievementManager.Instance.UnlockAchievement("COMBO_5X");
 
         // Spawn floating score with combo colors
@@ -79,7 +79,7 @@ public class ComboManager : MonoBehaviour
         return finalScore;
     }
 
-    private void ResetCombo()
+    public void ResetCombo()
     {
         CurrentCombo = 0;
         Multiplier = 1;

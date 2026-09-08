@@ -47,7 +47,7 @@ public class PowerUp : MonoBehaviour
 
     private void CheckPickup(GameObject target)
     {
-        var player = target.GetComponent<PlayerController>();
+        var player = target.GetComponentInParent<PlayerController>();
         if (player == null) return;
         player.ApplyPowerUp(powerUpType);
 

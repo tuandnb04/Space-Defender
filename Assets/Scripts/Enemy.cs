@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+using SpaceDefender;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class Enemy : MonoBehaviour
 {
@@ -66,7 +70,8 @@ public class Enemy : MonoBehaviour
     private void ShootLaser()
     {
         if (_isDead) return;
-        if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver)) return;
+        if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver ||
+                                     GameManager.Instance.IsPaused)) return;
 
         var spawnPos = transform.position + Vector3.down * 0.5f;
         Instantiate(enemyLaserPrefab, spawnPos, Quaternion.identity);
@@ -94,14 +99,83 @@ public class Enemy : MonoBehaviour
 
         if (explosionPrefab) Instantiate(explosionPrefab, transform.position, Quaternion.identity);
 
-        // Power-up drop chance
-        if (powerUpPrefabs is { Length: > 0 } && Random.value <= dropChance)
-        {
-            var pIdx = Random.Range(0, powerUpPrefabs.Length);
-            if (powerUpPrefabs[pIdx]) Instantiate(powerUpPrefabs[pIdx], transform.position, Quaternion.identity);
-        }
+        // Smart Power-up Drop
+        TrySmartDropPowerUp();
 
         Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        if (EnemySpawner.Instance != null)
+            EnemySpawner.Instance.OnEnemyRemoved();
+    }
+
+    // ReSharper disable Unity.PerformanceAnalysis
+    private void TrySmartDropPowerUp()
+    {
+        if (powerUpPrefabs == null || powerUpPrefabs.Length == 0) return;
+
+        // Limit active power-ups on screen to 2 to prevent clutter
+        var activePowerUps = FindObjectsByType<PowerUp>(FindObjectsInactive.Exclude);
+        if (activePowerUps is { Length: >= 2 }) return;
+
+        var player = PlayerController.Instance;
+        var finalChance = dropChance;
+
+        // In danger (1 heart) -> boost drop chance to help comeback
+        if (player && player.currentLives <= 1)
+            finalChance = Mathf.Min(finalChance * 1.6f, 0.45f);
+
+        if (Random.value > finalChance) return;
+
+        var candidates = new List<GameObject>();
+        foreach (var p in powerUpPrefabs)
+        {
+            if (!p) continue;
+            var comp = p.GetComponent<PowerUp>();
+            if (!comp) continue;
+
+            if (player)
+            {
+                switch (comp.powerUpType)
+                {
+                    // Don't drop Shield if player already has shield active
+                    case PowerUpType.Shield when player.HasShield:
+                    // Don't drop Health if player is already at full health
+                    case PowerUpType.Health when player.currentLives >= player.maxLives:
+                        continue;
+                    case PowerUpType.TripleShot:
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            candidates.Add(p);
+        }
+
+        // If player is at 1 heart and Health candidate exists, give Health high priority
+        if (player && player.currentLives <= 1)
+        {
+            var healthPrefab = candidates.Find(c => c.GetComponent<PowerUp>()?.powerUpType == PowerUpType.Health);
+            if (healthPrefab && Random.value < 0.65f)
+            {
+                Instantiate(healthPrefab, transform.position, Quaternion.identity);
+                return;
+            }
+        }
+
+        if (candidates.Count > 0)
+        {
+            var chosen = candidates[Random.Range(0, candidates.Count)];
+            Instantiate(chosen, transform.position, Quaternion.identity);
+        }
+        else
+        {
+            var chosen = powerUpPrefabs[Random.Range(0, powerUpPrefabs.Length)];
+            if (chosen) Instantiate(chosen, transform.position, Quaternion.identity);
+        }
     }
 
     private void Hit(GameObject target)

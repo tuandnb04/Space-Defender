@@ -411,6 +411,7 @@ namespace SpaceDefender.Editor
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
             sr.sortingOrder = 9;
+            sr.flipY = true;
 
             var col = go.AddComponent<BoxCollider2D>();
             col.isTrigger = true;
@@ -704,8 +705,9 @@ namespace SpaceDefender.Editor
             var spawner = spawnerObj.AddComponent<EnemySpawner>();
             spawner.enemyPrefabs = enemyPrefabs;
             spawner.bossPrefab = bossPrefab;
-            spawner.minSpawnDelay = 0.8f;
-            spawner.maxSpawnDelay = 1.6f;
+            spawner.baseEnemiesPerWave = 6;
+            spawner.enemyIncreasePerWave = 3;
+            spawner.bossWaveInterval = 4;
 
             // 4. Audio Manager
             var audioObj = new GameObject("AudioManager");
@@ -793,6 +795,24 @@ namespace SpaceDefender.Editor
             hsRect.pivot = new Vector2(0, 1);
             hsRect.anchoredPosition = new Vector2(40, -150);
             hsRect.sizeDelta = new Vector2(350, 50);
+
+            // Wave Text (Top-Left below High Score)
+            var waveObj = new GameObject("WaveText");
+            waveObj.transform.SetParent(inGameHUD.transform, false);
+            var waveText = waveObj.AddComponent<Text>();
+            waveText.text = "WAVE\n01";
+            if (gameFont != null) waveText.font = gameFont;
+            waveText.fontSize = 24;
+            waveText.lineSpacing = 1.1f;
+            waveText.alignment = TextAnchor.UpperLeft;
+            waveText.color = new Color(0.3f, 1f, 0.5f, 1f);
+            waveObj.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.9f);
+            var waveRect = waveText.rectTransform;
+            waveRect.anchorMin = new Vector2(0, 1);
+            waveRect.anchorMax = new Vector2(0, 1);
+            waveRect.pivot = new Vector2(0, 1);
+            waveRect.anchoredPosition = new Vector2(40, -210);
+            waveRect.sizeDelta = new Vector2(250, 70);
 
             // Hearts (Top-Right)
             var heartList = new List<Image>();
@@ -975,6 +995,48 @@ namespace SpaceDefender.Editor
             hpTextRect.offsetMax = Vector2.zero;
 
             bossBarObj.SetActive(false);
+
+            // Wave Banner Panel (Center Screen Announcements & Warnings)
+            var waveBannerPanel = new GameObject("WaveBannerPanel");
+            waveBannerPanel.transform.SetParent(inGameHUD.transform, false);
+            var wbRect = waveBannerPanel.AddComponent<RectTransform>();
+            wbRect.anchorMin = new Vector2(0.5f, 0.5f);
+            wbRect.anchorMax = new Vector2(0.5f, 0.5f);
+            wbRect.pivot = new Vector2(0.5f, 0.5f);
+            wbRect.anchoredPosition = new Vector2(0, 60);
+            wbRect.sizeDelta = new Vector2(650, 120);
+
+            var wbBg = waveBannerPanel.AddComponent<Image>();
+            wbBg.color = new Color(0.04f, 0.06f, 0.12f, 0.88f);
+
+            var wbTitleObj = new GameObject("WaveBannerTitle");
+            wbTitleObj.transform.SetParent(waveBannerPanel.transform, false);
+            var wbTitleText = wbTitleObj.AddComponent<Text>();
+            wbTitleText.text = "WAVE 1";
+            if (gameFont != null) wbTitleText.font = gameFont;
+            wbTitleText.fontSize = 36;
+            wbTitleText.fontStyle = FontStyle.Bold;
+            wbTitleText.alignment = TextAnchor.MiddleCenter;
+            wbTitleText.color = Color.cyan;
+            wbTitleObj.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.95f);
+            var wbtRect = wbTitleText.rectTransform;
+            wbtRect.anchoredPosition = new Vector2(0, 20);
+            wbtRect.sizeDelta = new Vector2(620, 50);
+
+            var wbSubObj = new GameObject("WaveBannerSubtitle");
+            wbSubObj.transform.SetParent(waveBannerPanel.transform, false);
+            var wbSubText = wbSubObj.AddComponent<Text>();
+            wbSubText.text = "ENGAGE HOSTILE FLEET";
+            if (gameFont != null) wbSubText.font = gameFont;
+            wbSubText.fontSize = 20;
+            wbSubText.alignment = TextAnchor.MiddleCenter;
+            wbSubText.color = new Color(0.9f, 0.9f, 0.9f);
+            wbSubObj.AddComponent<Outline>().effectColor = new Color(0, 0, 0, 0.95f);
+            var wbsRect = wbSubText.rectTransform;
+            wbsRect.anchoredPosition = new Vector2(0, -22);
+            wbsRect.sizeDelta = new Vector2(620, 35);
+
+            waveBannerPanel.SetActive(false);
 
             // ================== B. MAIN MENU PANEL ==================
             var mainMenuPanel = new GameObject("MainMenuPanel");
@@ -1448,6 +1510,10 @@ namespace SpaceDefender.Editor
             uiManager.inGameHUD = inGameHUD;
             uiManager.scoreText = scoreText;
             uiManager.highScoreText = hsText;
+            uiManager.waveText = waveText;
+            uiManager.waveBannerPanel = waveBannerPanel;
+            uiManager.waveBannerTitle = wbTitleText;
+            uiManager.waveBannerSubtitle = wbSubText;
             uiManager.heartImages = heartList.ToArray();
             uiManager.pauseButton = pauseBtn;
             uiManager.bombText = bombText;

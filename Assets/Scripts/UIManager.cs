@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Text;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -26,8 +28,13 @@ public class UIManager : MonoBehaviour
 
     public Text scoreText;
     public Text highScoreText;
+    public Text waveText;
     public Image[] heartImages;
     public Button pauseButton;
+
+    [Header("Wave Announcements")] public GameObject waveBannerPanel;
+    public Text waveBannerTitle;
+    public Text waveBannerSubtitle;
 
     [Header("Bombs HUD")] public Text bombText;
 
@@ -101,6 +108,7 @@ public class UIManager : MonoBehaviour
 
     private int _previewShipIndex;
     private Coroutine _toastCoroutine;
+    private Coroutine _waveBannerCoroutine;
 
     public static UIManager Instance
     {
@@ -375,6 +383,7 @@ public class UIManager : MonoBehaviour
         if (achievementsModal != null) achievementsModal.SetActive(false);
         HideCombo();
         ShowBossBar(false);
+        HideWaveBanner();
     }
 
     public void ShowInGameHUD()
@@ -389,6 +398,7 @@ public class UIManager : MonoBehaviour
         if (achievementsModal != null) achievementsModal.SetActive(false);
         HideCombo();
         ShowBossBar(false);
+        HideWaveBanner();
     }
 
     public void ShowPausePanel(bool show)
@@ -579,15 +589,11 @@ public class UIManager : MonoBehaviour
         if (bossHpText) bossHpText.text = $"{current} / {max}";
     }
 
-    public void UpdateBossHP(int current, int max)
-    {
-        UpdateBossHp(current, max);
-    }
-
     public void ShowGameOver(int finalScore, int highScore, bool isNewRecord = false)
     {
         ShowBossBar(false);
         HideCombo();
+        HideWaveBanner();
         if (pausePanel != null) pausePanel.SetActive(false);
         if (gameOverPanel != null) gameOverPanel.SetActive(true);
 
@@ -603,6 +609,62 @@ public class UIManager : MonoBehaviour
         if (scoreText) scoreText.text = $"SCORE\n{score:D4}";
 
         if (highScoreText) highScoreText.text = $"BEST: {highScore:D4}";
+    }
+
+    public void UpdateWave(int wave)
+    {
+        if (waveText) waveText.text = $"WAVE\n{wave:D2}";
+    }
+
+    public void ShowWaveBanner(string title, string subtitle, Color color, float duration = 2.0f)
+    {
+        if (!waveBannerPanel) return;
+        if (_waveBannerCoroutine != null) StopCoroutine(_waveBannerCoroutine);
+        _waveBannerCoroutine = StartCoroutine(WaveBannerRoutine(title, subtitle, color, duration, false));
+    }
+
+    public void ShowBossWarning(float duration = 2.5f)
+    {
+        if (!waveBannerPanel) return;
+        if (_waveBannerCoroutine != null) StopCoroutine(_waveBannerCoroutine);
+        _waveBannerCoroutine = StartCoroutine(WaveBannerRoutine("WARNING: BOSS DETECTED!", "RED UFO MOTHERSHIP APPROACHING", new Color(1f, 0.2f, 0.25f), duration, true));
+    }
+
+    public void HideWaveBanner()
+    {
+        if (_waveBannerCoroutine != null)
+        {
+            StopCoroutine(_waveBannerCoroutine);
+            _waveBannerCoroutine = null;
+        }
+        if (waveBannerPanel) waveBannerPanel.SetActive(false);
+    }
+
+    private IEnumerator WaveBannerRoutine(string title, string subtitle, Color color, float duration, bool isWarning)
+    {
+        if (waveBannerTitle)
+        {
+            waveBannerTitle.text = title;
+            waveBannerTitle.color = color;
+        }
+        if (waveBannerSubtitle) waveBannerSubtitle.text = subtitle;
+
+        waveBannerPanel.SetActive(true);
+
+        var elapsed = 0f;
+        while (elapsed < duration)
+        {
+            if (isWarning && waveBannerTitle)
+            {
+                var flash = Mathf.PingPong(elapsed * 6f, 1f);
+                waveBannerTitle.color = Color.Lerp(new Color(1f, 0.15f, 0.15f), new Color(1f, 0.9f, 0.2f), flash);
+            }
+            yield return new WaitForSeconds(0.05f);
+            elapsed += 0.05f;
+        }
+
+        waveBannerPanel.SetActive(false);
+        _waveBannerCoroutine = null;
     }
 
     public void UpdateLives(int lives)

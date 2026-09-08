@@ -1,40 +1,63 @@
 using System.Collections;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 namespace SpaceDefender
 {
     public class EnemySpawner : MonoBehaviour
     {
-        [Header("Prefabs")] public GameObject[] enemyPrefabs;
+        private static EnemySpawner _instance;
 
+        [Header("Prefabs")]
+        public GameObject[] enemyPrefabs;
         public GameObject bossPrefab;
 
-        [Header("Spawn Timing")] public float minSpawnDelay = 0.8f;
-
-        public float maxSpawnDelay = 1.6f;
-
-        [Header("Difficulty Scaling")] public float maxDifficultyScore = 250f;
-
-        [Header("Boss Settings")] public int bossScoreThreshold = 80;
-
-        public int bossScoreInterval = 120;
-
-        [Header("Spawn Position")] public float horizontalPadding = 0.8f;
-
+        [Header("Spawn Position")]
+        public float horizontalPadding = 0.8f;
         public float spawnYOffset = 1.0f;
-        private float _maxX;
 
+        [Header("Wave Configuration")]
+        public int currentWave = 1;
+        public int baseEnemiesPerWave = 6;
+        public int enemyIncreasePerWave = 3;
+        public int bossWaveInterval = 4; // Boss on Wave 4, 8, 12...
+
+        private float _maxX;
         private float _minX;
-        private int _nextBossScore = 80;
         private float _spawnY;
 
-        private bool IsBossActive { get; set; }
+        private Coroutine _waveCoroutine;
+        private int _totalWaveEnemies;
+        private int _enemiesSpawnedThisWave;
+        private int _livingEnemies;
+        private bool _isBossActive;
+        private bool _isWaveIntermission;
+        private bool _isClearing;
+
+        public static EnemySpawner Instance
+        {
+            get
+            {
+                if (!_instance) _instance = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);
+                return _instance;
+            }
+            private set => _instance = value;
+        }
+
+        private void Awake()
+        {
+            Instance = this;
+        }
 
         private void Start()
         {
-            _nextBossScore = bossScoreThreshold;
             CalculateSpawnBounds();
-            StartCoroutine(SpawnRoutine());
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Instance = null;
         }
 
         private void CalculateSpawnBounds()
@@ -55,62 +78,134 @@ namespace SpaceDefender
             }
         }
 
-        private IEnumerator SpawnRoutine()
+        public void StartWaveSequence()
         {
-            yield return new WaitForSeconds(0.3f);
+            ClearAllEnemies();
+            currentWave = 1;
+            if (_waveCoroutine != null) StopCoroutine(_waveCoroutine);
+            _waveCoroutine = StartCoroutine(MasterWaveRoutine());
+        }
+
+        private IEnumerator MasterWaveRoutine()
+        {
+            yield return new WaitForSeconds(0.4f);
 
             while (true)
             {
-                if (GameManager.Instance)
+                // Wait while game is not running or paused
+                while (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver))
                 {
-                    if (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver)
-                    {
-                        yield return new WaitForSeconds(0.25f);
-                        continue;
-                    }
-
-                    // Check boss spawning milestone
-                    if (bossPrefab && !IsBossActive && GameManager.Instance.Score >= _nextBossScore)
-                    {
-                        SpawnBoss();
-                        yield return new WaitForSeconds(2.0f);
-                        continue;
-                    }
+                    yield return new WaitForSeconds(0.2f);
                 }
 
-                // If boss is active, slow down regular enemy spawns to create a duel atmosphere
-                if (IsBossActive)
+                _isClearing = false;
+                _isWaveIntermission = false;
+
+                if (UIManager.Instance) UIManager.Instance.UpdateWave(currentWave);
+
+                var isBossWave = (currentWave % bossWaveInterval == 0);
+
+                if (isBossWave && bossPrefab != null)
                 {
+                    // =================== BOSS WAVE ===================
+                    _isBossActive = true;
+
+                    // Warning Alert
+                    if (AudioManager.Instance) AudioManager.Instance.PlayBossWarning();
+                    if (UIManager.Instance) UIManager.Instance.ShowBossWarning();
+
                     yield return new WaitForSeconds(2.5f);
-                    continue;
+
+                    // Spawn Boss
+                    var spawnPos = new Vector3(0f, _spawnY, 0f);
+                    Instantiate(bossPrefab, spawnPos, Quaternion.identity);
+
+                    // Wait until boss is defeated
+                    while (_isBossActive)
+                    {
+                        yield return new WaitForSeconds(0.3f);
+                    }
+
+                    // Boss defeated -> wave clear!
+                }
+                else
+                {
+                    // =================== REGULAR WAVE ===================
+                    _totalWaveEnemies = baseEnemiesPerWave + (currentWave - 1) * enemyIncreasePerWave;
+                    _enemiesSpawnedThisWave = 0;
+                    _livingEnemies = 0;
+
+                    // Wave Start Announcement
+                    if (UIManager.Instance)
+                    {
+                        UIManager.Instance.ShowWaveBanner($"WAVE {currentWave}", "ENGAGE HOSTILE FLEET", Color.cyan);
+                    }
+
+                    yield return new WaitForSeconds(1.2f);
+
+                    // Spawn fleet
+                    while (_enemiesSpawnedThisWave < _totalWaveEnemies)
+                    {
+                        if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver))
+                        {
+                            yield return new WaitForSeconds(0.25f);
+                            continue;
+                        }
+
+                        SpawnRandomEnemy();
+                        _enemiesSpawnedThisWave++;
+                        _livingEnemies++;
+
+                        // Delay scales with wave difficulty
+                        var baseMinDelay = Mathf.Max(0.6f, 1.2f - (currentWave * 0.05f));
+                        var baseMaxDelay = Mathf.Max(1.0f, 1.9f - (currentWave * 0.07f));
+                        var delay = Random.Range(baseMinDelay, baseMaxDelay);
+                        yield return new WaitForSeconds(delay);
+                    }
+
+                    // Wait until all living enemies in wave are eliminated
+                    while (_livingEnemies > 0)
+                    {
+                        yield return new WaitForSeconds(0.2f);
+                    }
+
+                    // Wave completed!
                 }
 
-                SpawnRandomEnemy();
-
-                // Dynamic difficulty calculation based on current score
-                var difficulty = GameManager.Instance
-                    ? Mathf.Clamp01(GameManager.Instance.Score / maxDifficultyScore)
-                    : 0f;
-                var scaledMin = Mathf.Lerp(minSpawnDelay, minSpawnDelay * 0.55f, difficulty);
-                var scaledMax = Mathf.Lerp(maxSpawnDelay, maxSpawnDelay * 0.65f, difficulty);
-
-                var delay = Random.Range(scaledMin, scaledMax);
-                yield return new WaitForSeconds(delay);
+                yield return StartCoroutine(WaveClearRoutine());
             }
         }
 
-        private void SpawnBoss()
+        private IEnumerator WaveClearRoutine()
         {
-            IsBossActive = true;
-            var spawnPos = new Vector3(0f, _spawnY, 0f);
-            Instantiate(bossPrefab, spawnPos, Quaternion.identity);
+            _isWaveIntermission = true;
+
+            var bonusScore = currentWave * 50;
+            if (GameManager.Instance) GameManager.Instance.AwardWaveBonus(currentWave, bonusScore);
+
+            if (AudioManager.Instance) AudioManager.Instance.PlayWaveClear();
+
+            if (UIManager.Instance)
+            {
+                UIManager.Instance.ShowWaveBanner($"WAVE {currentWave} CLEARED!", $"+{bonusScore} BONUS SCORE", new Color(0.2f, 1f, 0.4f), 2.2f);
+            }
+
+            // 2.5s intermission for powerup collection and player recovery
+            yield return new WaitForSeconds(2.5f);
+
+            currentWave++;
+            _isWaveIntermission = false;
+        }
+
+        public void OnEnemyRemoved()
+        {
+            if (_isClearing || _isBossActive || _isWaveIntermission) return;
+            _livingEnemies = Mathf.Max(0, _livingEnemies - 1);
         }
 
         public void OnBossDefeated()
         {
-            IsBossActive = false;
-            var currentScore = GameManager.Instance ? GameManager.Instance.Score : _nextBossScore;
-            _nextBossScore = currentScore + bossScoreInterval;
+            _isBossActive = false;
         }
 
         // ReSharper disable Unity.PerformanceAnalysis
@@ -120,45 +215,56 @@ namespace SpaceDefender
 
             var index = Random.Range(0, enemyPrefabs.Length);
             var prefab = enemyPrefabs[index];
-
             if (!prefab) return;
+
             var randomX = Random.Range(_minX, _maxX);
             var spawnPos = new Vector3(randomX, _spawnY, 0f);
             var enemyObj = Instantiate(prefab, spawnPos, Quaternion.identity);
 
-            // Slightly increase speed with difficulty
-            if (!GameManager.Instance) return;
-            var diff = Mathf.Clamp01(GameManager.Instance.Score / maxDifficultyScore);
+            // Slightly increase speed with wave
             var enemyComp = enemyObj.GetComponent<Enemy>();
-            if (enemyComp) enemyComp.speed *= 1f + diff * 0.35f;
+            if (!enemyComp) return;
+            var speedMultiplier = 1f + Mathf.Min((currentWave - 1) * 0.06f, 0.5f);
+            enemyComp.speed *= speedMultiplier;
         }
 
         public void ClearAllEnemies()
         {
-            IsBossActive = false;
-            _nextBossScore = bossScoreThreshold;
+            _isClearing = true;
+            _isBossActive = false;
+            _isWaveIntermission = false;
+            _livingEnemies = 0;
+            _enemiesSpawnedThisWave = 0;
 
-            var activeEnemies = FindObjectsByType<Enemy>();
+            if (_waveCoroutine != null)
+            {
+                StopCoroutine(_waveCoroutine);
+                _waveCoroutine = null;
+            }
+
+            var activeEnemies = FindObjectsByType<Enemy>(FindObjectsInactive.Exclude);
             foreach (var enemy in activeEnemies)
                 if (enemy != null)
                     Destroy(enemy.gameObject);
 
-            var activeBosses = FindObjectsByType<BossController>();
+            var activeBosses = FindObjectsByType<BossController>(FindObjectsInactive.Exclude);
             foreach (var boss in activeBosses)
                 if (boss != null)
                     Destroy(boss.gameObject);
 
-            var activePowerUps = FindObjectsByType<PowerUp>();
+            var activePowerUps = FindObjectsByType<PowerUp>(FindObjectsInactive.Exclude);
             foreach (var pup in activePowerUps)
                 if (pup != null)
                     Destroy(pup.gameObject);
 
-            var playerLasers = FindObjectsByType<Laser>();
-            foreach (var laser in playerLasers)
-                if (laser)
+            var lasers = FindObjectsByType<Laser>(FindObjectsInactive.Exclude);
+            foreach (var laser in lasers)
+                if (laser != null)
                     Destroy(laser.gameObject);
 
-            if (UIManager.Instance != null) UIManager.Instance.ShowBossBar(false);
+            if (UIManager.Instance == null) return;
+            UIManager.Instance.ShowBossBar(false);
+            UIManager.Instance.HideWaveBanner();
         }
     }
 }

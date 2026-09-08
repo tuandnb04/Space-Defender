@@ -14,6 +14,8 @@ public class AudioManager : MonoBehaviour
     public AudioClip buttonClickClip;
     public AudioClip empBombClip;
     public AudioClip comboClip;
+    public AudioClip waveClearClip;
+    public AudioClip bossWarningClip;
     public AudioClip bgmClip;
 
     [Header("Audio Sources")] public AudioSource sfxSource;
@@ -117,6 +119,47 @@ public class AudioManager : MonoBehaviour
         if (comboClip != null && sfxSource != null)
             sfxSource.PlayOneShot(comboClip, 0.9f);
         else if (powerUpClip != null && sfxSource != null) sfxSource.PlayOneShot(powerUpClip, 0.6f);
+    }
+
+    public void PlayWaveClear()
+    {
+        if (waveClearClip != null && sfxSource != null)
+            sfxSource.PlayOneShot(waveClearClip, 1.0f);
+        else if (powerUpClip != null && sfxSource != null)
+            sfxSource.PlayOneShot(powerUpClip, 1.0f);
+    }
+
+    public void PlayBossWarning()
+    {
+        if (bossWarningClip == null)
+            bossWarningClip = GenerateProceduralWarningAlarm();
+
+        if (bossWarningClip != null && sfxSource != null)
+            sfxSource.PlayOneShot(bossWarningClip, 1.0f);
+    }
+
+    private static AudioClip GenerateProceduralWarningAlarm()
+    {
+        const int sampleRate = 44100;
+        const float duration = 2.2f;
+        var totalSamples = Mathf.FloorToInt(sampleRate * duration);
+        var samples = new float[totalSamples];
+        const float twoPi = Mathf.PI * 2f;
+
+        for (var i = 0; i < totalSamples; i++)
+        {
+            var t = (float)i / sampleRate;
+            // 4 alternating pulses between 880Hz and 660Hz with sharp envelope
+            var pulse = (t * 3.5f) % 1.0f;
+            var freq = ((int)(t * 3.5f) % 2 == 0) ? 880f : 660f;
+            var env = Mathf.Pow(Mathf.Clamp01(1f - pulse), 1.5f);
+            var val = Mathf.Sin(t * freq * twoPi) * env * 0.45f;
+            samples[i] = Mathf.Clamp(val, -1f, 1f);
+        }
+
+        var clip = AudioClip.Create("BossWarningAlarm", totalSamples, 1, sampleRate, false);
+        clip.SetData(samples, 0);
+        return clip;
     }
 
     public void SetBGMVolume(float volume)
