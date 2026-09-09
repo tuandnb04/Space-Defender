@@ -27,6 +27,10 @@ namespace Core
         public bool IsGameOver { get; private set; }
         public bool IsPaused { get; private set; }
 
+        // Static fast-path flag — avoids Instance null-check chain in every Update()
+        // true when: game started AND not over AND not paused
+        public static bool IsActive { get; private set; }
+
         private int Score { get; set; }
         private int HighScore { get; set; }
         private bool IsNewHighScore { get; set; }
@@ -133,6 +137,7 @@ namespace Core
             IsGameStarted = true;
             IsGameOver = false;
             IsPaused = false;
+            IsActive = true;
             Score = 0;
             IsNewHighScore = false;
             Time.timeScale = 1f;
@@ -207,8 +212,8 @@ namespace Core
         public void GameOver()
         {
             if (IsGameOver) return;
-
             IsGameOver = true;
+            IsActive = false;
 
             if (AudioManager.Instance != null) AudioManager.Instance.PlayGameOver();
 
@@ -235,8 +240,8 @@ namespace Core
         private void PauseGame()
         {
             if (IsGameOver || !IsGameStarted) return;
-
             IsPaused = true;
+            IsActive = false;
             Time.timeScale = 0f;
 
             if (UIManager.Instance) UIManager.Instance.ShowPausePanel(true);
@@ -245,6 +250,7 @@ namespace Core
         public void ResumeGame()
         {
             IsPaused = false;
+            IsActive = true;
             Time.timeScale = 1f;
 
             if (UIManager.Instance) UIManager.Instance.ShowPausePanel(false);
@@ -255,6 +261,7 @@ namespace Core
             Time.timeScale = 1f;
             IsGameOver = false;
             IsPaused = false;
+            IsActive = false; // reset then StartGame sets true
             Score = 0;
             IsNewHighScore = false;
             StartGame();
@@ -266,6 +273,7 @@ namespace Core
             IsGameStarted = false;
             IsGameOver = false;
             IsPaused = false;
+            IsActive = false;
 
             // Clear active enemies
             var spawner = FindAnyObjectByType<EnemySpawner>(FindObjectsInactive.Include);

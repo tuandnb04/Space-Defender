@@ -10,6 +10,30 @@ namespace Player
 {
     public partial class PlayerController
     {
+        // ─── Ghost Trail Pool ───────────────────────────────────────────────
+        // 4 ghost slots pre-allocated; no new GameObject on each dash.
+        private const int GhostPoolSize = 4;
+        private GhostSlot[] _ghostPool;
+
+        private struct GhostSlot
+        {
+            public GameObject Go;
+            public SpriteRenderer Sr;
+        }
+
+        private void InitGhostPool()
+        {
+            _ghostPool = new GhostSlot[GhostPoolSize];
+            for (var i = 0; i < GhostPoolSize; i++)
+            {
+                var go = new GameObject($"DashGhost_{i}");
+                go.SetActive(false);
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sortingOrder = _spriteRenderer ? _spriteRenderer.sortingOrder - 1 : 9;
+                _ghostPool[i] = new GhostSlot { Go = go, Sr = sr };
+            }
+        }
+
         private void HandleMovement()
         {
             if (_isDashing) return;
@@ -169,45 +193,42 @@ namespace Player
             }
         }
 
+        private int _nextGhostSlot;
+
         private void SpawnGhostTrail()
         {
             if (_spriteRenderer == null || _spriteRenderer.sprite == null) return;
 
-            var ghostObj = new GameObject("DashGhost")
-            {
-                transform =
-                {
-                    position = transform.position,
-                    rotation = transform.rotation,
-                    localScale = transform.localScale
-                }
-            };
+            // Lazy-init pool on first dash (Awake order not guaranteed)
+            if (_ghostPool == null) InitGhostPool();
 
-            var ghostSr = ghostObj.AddComponent<SpriteRenderer>();
-            ghostSr.sprite = _spriteRenderer.sprite;
-            ghostSr.color = new Color(0.3f, 0.85f, 1f, 0.5f);
-            ghostSr.sortingOrder = _spriteRenderer.sortingOrder - 1;
+            // Round-robin through the pre-allocated pool
+            if (_ghostPool == null) return;
+            var slot = _ghostPool[_nextGhostSlot % GhostPoolSize];
+            _nextGhostSlot++;
 
-            StartCoroutine(FadeAndDestroyGhost(ghostObj, ghostSr, 0.25f));
+            slot.Sr.sprite = _spriteRenderer.sprite;
+            slot.Sr.color = new Color(0.3f, 0.85f, 1f, 0.5f);
+            slot.Sr.sortingOrder = _spriteRenderer.sortingOrder - 1;
+            slot.Go.transform.SetPositionAndRotation(transform.position, transform.rotation);
+            slot.Go.transform.localScale = transform.localScale;
+            slot.Go.SetActive(true);
+
+            StartCoroutine(FadeGhostSlot(slot, 0.25f));
         }
 
-        private static IEnumerator FadeAndDestroyGhost(GameObject obj, SpriteRenderer sr, float duration)
+        private static IEnumerator FadeGhostSlot(GhostSlot slot, float duration)
         {
             var elapsed = 0f;
-            var startColor = sr.color;
+            const float startAlpha = 0.5f;
             while (elapsed < duration)
             {
-                if (sr != null)
-                {
-                    var alpha = Mathf.Lerp(startColor.a, 0f, elapsed / duration);
-                    sr.color = new Color(startColor.r, startColor.g, startColor.b, alpha);
-                }
-
+                if (slot.Sr != null)
+                    slot.Sr.color = new Color(0.3f, 0.85f, 1f, Mathf.Lerp(startAlpha, 0f, elapsed / duration));
                 elapsed += Time.deltaTime;
                 yield return null;
             }
-
-            Destroy(obj);
+            if (slot.Go != null) slot.Go.SetActive(false);
         }
     }
 }

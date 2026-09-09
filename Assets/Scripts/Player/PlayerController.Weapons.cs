@@ -158,23 +158,31 @@ namespace Player
 
             if (CameraShake.Instance != null) CameraShake.Instance.Shake(0.3f, 0.15f);
 
-            if (PostProcessingManager.Instance != null)
-                PostProcessingManager.Instance.SetFeverBloom(true);
-            if (AudioManager.Instance != null)
-                AudioManager.Instance.SetMusicFeverMode(true);
+            if (PostProcessingManager.Instance != null) PostProcessingManager.Instance.SetFeverBloom(true);
+            if (AudioManager.Instance != null) AudioManager.Instance.SetMusicFeverMode(true);
+
+            // Throttle UI updates to ~10/s (UI canvas rebuild is expensive at 60fps)
+            const float uiUpdateInterval = 0.1f;
+            var nextUiUpdate = 0f;
 
             while (_feverTimer > 0f)
             {
                 _feverTimer -= Time.deltaTime;
-                currentOverload = _feverTimer / duration * maxOverload;
+                var overloadRatio = _feverTimer / duration; // local calc, no property overhead
+                currentOverload = overloadRatio * maxOverload;
 
-                if (UIManager.Instance != null) UIManager.Instance.UpdateOverload(OverloadRatio);
-
-                // Rainbow cycle visual
+                // Rainbow cycle visual (every frame is fine, it's just a color set)
                 if (_spriteRenderer != null)
                 {
                     var hue = Mathf.PingPong(Time.time * 3f, 1f);
                     _spriteRenderer.color = Color.HSVToRGB(hue, 0.8f, 1f);
+                }
+
+                // UI throttle: push overload bar at 10fps, not 60fps
+                if (Time.time >= nextUiUpdate)
+                {
+                    nextUiUpdate = Time.time + uiUpdateInterval;
+                    if (UIManager.Instance != null) UIManager.Instance.UpdateOverload(overloadRatio);
                 }
 
                 yield return null;
@@ -184,10 +192,8 @@ namespace Player
             currentOverload = 0f;
             if (_spriteRenderer != null) _spriteRenderer.color = Color.white;
 
-            if (PostProcessingManager.Instance != null)
-                PostProcessingManager.Instance.SetFeverBloom(false);
-            if (AudioManager.Instance != null)
-                AudioManager.Instance.SetMusicFeverMode(false);
+            if (PostProcessingManager.Instance != null) PostProcessingManager.Instance.SetFeverBloom(false);
+            if (AudioManager.Instance != null) AudioManager.Instance.SetMusicFeverMode(false);
 
             if (UIManager.Instance != null) UIManager.Instance.UpdateOverload(0f);
             _feverCoroutine = null;

@@ -31,6 +31,8 @@ namespace Core
             ResetCombo();
         }
 
+        private float _nextUiUpdate;
+
         private void Update()
         {
             if (CurrentCombo <= 0) return;
@@ -40,11 +42,12 @@ namespace Core
             {
                 ResetCombo();
             }
-            else
+            else if (UIManager.Instance && Time.time >= _nextUiUpdate)
             {
-                if (UIManager.Instance)
-                    UIManager.Instance.UpdateCombo(CurrentCombo, Multiplier,
-                        Mathf.Clamp01(TimeRemaining / comboTimeout));
+                // Throttle to 10fps — UIManager calls trigger canvas rebuild
+                _nextUiUpdate = Time.time + 0.1f;
+                UIManager.Instance.UpdateCombo(CurrentCombo, Multiplier,
+                    Mathf.Clamp01(TimeRemaining / comboTimeout));
             }
         }
 

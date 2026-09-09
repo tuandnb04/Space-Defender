@@ -60,6 +60,7 @@ namespace Player
         [Header("Perks")] public bool hasAfterburner;
 
         private float _dashCooldownTimer;
+        private float _lastDashCooldownRatio = -1f; // throttle dash UI updates
         private Coroutine _feverCoroutine;
         private float _feverTimer;
         private Coroutine _ghostTrailCoroutine;
@@ -75,6 +76,9 @@ namespace Player
         private Vector3 _startPosition;
         private ParticleSystem.EmissionModule _thrusterEmission;
         private ParticleSystem.MainModule _thrusterMain;
+        // Thruster dirty-flag: skip GPU state write when values haven't changed
+        private float _lastThrusterRate = -1f;
+        private float _lastThrusterSpeed = -1f;
 
         public static PlayerController Instance
         {
@@ -122,13 +126,18 @@ namespace Player
         private void Update()
         {
             if (_isDead) return;
-            if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver ||
-                                         GameManager.Instance.IsPaused)) return;
+            if (!GameManager.IsActive) return;
 
             if (_dashCooldownTimer > 0f)
             {
                 _dashCooldownTimer -= Time.deltaTime;
-                if (UIManager.Instance) UIManager.Instance.UpdateDashCooldown(DashCooldownRatio);
+                // Throttle: only push to UI when value changes by >1% — avoids canvas rebuild every frame
+                var ratio = DashCooldownRatio;
+                if (UIManager.Instance && Mathf.Abs(ratio - _lastDashCooldownRatio) > 0.01f)
+                {
+                    UIManager.Instance.UpdateDashCooldown(ratio);
+                    _lastDashCooldownRatio = ratio;
+                }
             }
 
             HandleMovement();
@@ -332,7 +341,11 @@ namespace Player
 
         private void SetThrusterRate(float rate, float speed, Color color)
         {
-            if (thrusterParticleSystem == null) return;
+            if (!thrusterParticleSystem) return;
+            // Dirty-flag guard: skip write if values haven't meaningfully changed
+            if (Mathf.Abs(rate - _lastThrusterRate) < 0.5f && Mathf.Abs(speed - _lastThrusterSpeed) < 0.1f) return;
+            _lastThrusterRate = rate;
+            _lastThrusterSpeed = speed;
             _thrusterEmission.rateOverTime = rate;
             _thrusterMain.startSpeed = speed;
             _thrusterMain.startColor = color;

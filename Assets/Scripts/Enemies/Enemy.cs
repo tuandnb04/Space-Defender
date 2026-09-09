@@ -287,8 +287,7 @@ namespace Enemies
         private void ShootLaser()
         {
             if (IsDead) return;
-            if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver ||
-                                         GameManager.Instance.IsPaused)) return;
+            if (!GameManager.IsActive) return;
 
             var spawnPos = transform.position + Vector3.down * 0.5f;
             var laserObj = ObjectPoolManager.Spawn(enemyLaserPrefab, spawnPos, Quaternion.identity);

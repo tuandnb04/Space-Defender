@@ -33,14 +33,22 @@ namespace Player
             maxLives = 3 + hpBonus;
         }
 
+        // Cached magnet radius — PlayerPrefs.GetInt is disk/registry I/O; cache it
+        private static float _cachedMagnetRadius = -1f;
+
         public static float GetMagnetRadius()
         {
+            if (_cachedMagnetRadius >= 0f) return _cachedMagnetRadius;
             var magnetLevel = PlayerPrefs.GetInt("SD_UPGRADE_MAGNET_LV", 0);
             var baseRadius = 2.2f + magnetLevel * 1.0f;
-            if (PerkManager.Instance != null && PerkManager.Instance.HasPerk(PerkType.SuperMagnet))
-                return baseRadius * 3.0f;
-            return baseRadius;
+            _cachedMagnetRadius = (PerkManager.Instance != null && PerkManager.Instance.HasPerk(PerkType.SuperMagnet))
+                ? baseRadius * 3.0f
+                : baseRadius;
+            return _cachedMagnetRadius;
         }
+
+        // Call this when an upgrade is purchased so the cache is refreshed
+        public static void InvalidateMagnetRadiusCache() => _cachedMagnetRadius = -1f;
 
         public void ApplyPowerUp(PowerUpType type)
         {
@@ -341,7 +349,7 @@ namespace Player
                 }
 
                 var enemy = h.GetComponentInParent<Enemy>();
-                if (enemy != null)
+                if (enemy)
                 {
                     enemy.TakeHitWithDamage(2);
                     continue;

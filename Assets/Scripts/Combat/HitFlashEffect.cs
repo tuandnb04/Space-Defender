@@ -11,7 +11,6 @@ namespace Combat
         private static readonly int FlashColorProp = Shader.PropertyToID("_FlashColor");
         private Coroutine _flashCoroutine;
         private MaterialPropertyBlock _propBlock;
-
         private SpriteRenderer _spriteRenderer;
 
         private void Awake()
@@ -41,35 +40,37 @@ namespace Combat
             if (_sharedFlashMaterial) return;
 
             var shader = Shader.Find("Universal Render Pipeline/2D/SpriteHitFlash");
-            if (!shader)
-                shader = Shader.Find("Sprites/Default");
+            if (!shader) shader = Shader.Find("Sprites/Default");
 
             if (shader)
-                _sharedFlashMaterial = new Material(shader)
-                {
-                    name = "SpriteHitFlash_Shared"
-                };
+                _sharedFlashMaterial = new Material(shader) { name = "SpriteHitFlash_Shared" };
         }
 
         public void Flash(float duration = 0.08f, Color? flashColor = null)
         {
             if (!gameObject.activeInHierarchy || !_spriteRenderer) return;
 
-            if (_flashCoroutine != null)
-                StopCoroutine(_flashCoroutine);
-
+            if (_flashCoroutine != null) StopCoroutine(_flashCoroutine);
             _flashCoroutine = StartCoroutine(FlashRoutine(duration, flashColor ?? Color.white));
         }
 
         private IEnumerator FlashRoutine(float duration, Color flashColor)
         {
+            // Set flash ON
             _spriteRenderer.GetPropertyBlock(_propBlock);
             _propBlock.SetFloat(FlashAmountProp, 1f);
             _propBlock.SetColor(FlashColorProp, flashColor);
             _spriteRenderer.SetPropertyBlock(_propBlock);
 
-            yield return new WaitForSeconds(duration);
+            // Manual timer — avoids WaitForSeconds heap allocation on every flash
+            var elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
 
+            // Set flash OFF
             _spriteRenderer.GetPropertyBlock(_propBlock);
             _propBlock.SetFloat(FlashAmountProp, 0f);
             _spriteRenderer.SetPropertyBlock(_propBlock);

@@ -97,31 +97,32 @@ namespace Enemies
         private void Update()
         {
             if (_isDead) return;
-            if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver ||
-                                         GameManager.Instance.IsPaused)) return;
+            if (!GameManager.IsActive) return;
 
             if (_isEntering)
             {
                 var pos = transform.position;
                 pos.y = Mathf.MoveTowards(pos.y, targetY, entrySpeed * Time.deltaTime);
                 transform.position = pos;
-
                 if (Mathf.Abs(pos.y - targetY) < 0.05f) _isEntering = false;
                 return;
             }
 
+            // Cache phase once per frame (avoids 3x HP division)
+            var phase = CurrentPhase;
+
             // Movement behavior by phase
             _patrolTimer += Time.deltaTime;
-            var speedMultiplier = CurrentPhase == 2 ? 1.4f : 1.0f;
+            var speedMultiplier = phase == 2 ? 1.4f : 1.0f;
             var newX = Mathf.Sin(_patrolTimer * patrolSpeed * speedMultiplier) * patrolAmplitude;
             transform.position = new Vector3(newX, targetY, transform.position.z);
 
             // Check Phase 3 transition
-            if (CurrentPhase == 3 && !_hasEnteredPhase3) EnterPhase3();
+            if (phase == 3 && !_hasEnteredPhase3) EnterPhase3();
 
             // Attack patterns
             if (!(Time.time >= _nextAttackTime)) return;
-            switch (CurrentPhase)
+            switch (phase)
             {
                 case 1:
                     _nextAttackTime = Time.time + attackInterval;
@@ -140,7 +141,6 @@ namespace Enemies
                         _nextAttackTime = Time.time + (variantIndex == 2 || variantIndex == 3 ? 0.14f : 0.18f);
                         FirePhase2Spiral();
                     }
-
                     break;
                 case 3:
                     _phase3Cycle = (_phase3Cycle + 1) % 3;
@@ -160,7 +160,6 @@ namespace Enemies
                             FireDanmakuFlowerNova();
                             break;
                     }
-
                     break;
             }
         }
@@ -181,8 +180,8 @@ namespace Enemies
 
             // Update Sprite if available
             if (bossVariantSprites != null && variantIndex < bossVariantSprites.Length &&
-                bossVariantSprites[variantIndex] != null)
-                if (_spriteRenderer != null)
+                bossVariantSprites[variantIndex])
+                if (_spriteRenderer)
                     _spriteRenderer.sprite = bossVariantSprites[variantIndex];
 
             switch (variantIndex)
@@ -229,7 +228,7 @@ namespace Enemies
             }
 
             currentHp = maxHp;
-            if (UIManager.Instance == null) return;
+            if (!UIManager.Instance) return;
             UIManager.Instance.ShowBossBar(true, bossName);
             UIManager.Instance.UpdateBossHp(currentHp, maxHp);
         }
@@ -318,9 +317,9 @@ namespace Enemies
             _hasEnteredPhase3 = true;
             _isShieldActive = true;
 
-            if (shieldVisual != null) shieldVisual.SetActive(true);
+            if (shieldVisual) shieldVisual.SetActive(true);
 
-            if (floatingScorePrefab != null)
+            if (floatingScorePrefab)
                 FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 1.2f,
                     $"{bossName} ENRAGED!", Color.red);
 
@@ -345,7 +344,9 @@ namespace Enemies
         private void SpawnDrone(Vector3 spawnPos)
         {
             if (!dronePrefab) return;
-            var drone = Instantiate(dronePrefab, spawnPos, Quaternion.identity);
+            // Use pool — drones are Enemy components and the pool handles reuse
+            var drone = ObjectPoolManager.Spawn(dronePrefab, spawnPos, Quaternion.identity);
+            if (!drone) return;
             _activeDrones++;
             var enemyComp = drone.GetComponent<Enemy>();
             if (!enemyComp) return;
