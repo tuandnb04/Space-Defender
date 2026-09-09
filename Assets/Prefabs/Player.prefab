@@ -2606,12 +2606,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 9.5
   padding: 0.6
+  verticalScreenPercent: 0.4
+  cockpitOffsetY: 0.1
+  cockpitRadius: 0.16
+  cockpitIndicator: {fileID: 0}
+  dashSpeedMultiplier: 2.5
+  dashDuration: 0.15
+  dashIFrameDuration: 0.22
+  dashCooldown: 1.2
+  dashGhostPrefab: {fileID: 0}
   maxLives: 3
   currentLives: 3
   invulnerableDuration: 1.5
+  weaponLevel: 1
   laserPrefab: {fileID: 7000974664780941619, guid: afda92edbe4cb6f43931ba2c0be97220, type: 3}
   firePoint: {fileID: 5376678564651046082}
   fireRate: 0.22
+  homingMissilePrefab: {fileID: 0}
+  missileInterval: 1.6
+  maxOverload: 100
+  currentOverload: 0
+  feverDuration: 5
+  isFeverActive: 0
   shockwavePrefab: {fileID: 5398390004568497382, guid: 63f069e6224faf04c9ff990ead1bb205, type: 3}
   maxBombs: 3
   currentBombs: 2
@@ -2620,7 +2636,11 @@ MonoBehaviour:
   - {fileID: -6543048329843848838, guid: ec53de08c992f9442b401f77073527cf, type: 3}
   - {fileID: 1626006803560414696, guid: 9bcdbfdb19c57814ba0edd80bb9ce469, type: 3}
   - {fileID: -590947418329346848, guid: d1e2a44f598071f469f6de2dab797648, type: 3}
+  damageSpriteTier1: {fileID: 0}
+  damageSpriteTier2: {fileID: 0}
+  damageOverlayRenderer: {fileID: 0}
   shieldVisual: {fileID: 2927509906001939557}
   floatingScorePrefab: {fileID: 3984610231378231889, guid: ccc79b6ea488c5f458d89406c4f4f05e, type: 3}
   explosionPrefab: {fileID: 5339094264529407694, guid: e981189c1b886d146940b6c45409c383, type: 3}
   autoFireForDemo: 0
+  hasAfterburner: 0

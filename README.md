@@ -82,22 +82,23 @@ Features 7 unlockable achievements tracked via `PlayerPrefs`:
 
 | Action | Primary Input | Secondary Input |
 | :--- | :--- | :--- |
-| **Move Ship Left / Right** | `A` / `D` | `Left Arrow` / `Right Arrow` |
-| **Fire Blasters** | `Spacebar` | `Left Mouse Click` |
-| **Deploy EMP Nuke Bomb** | `B` | `Right Mouse Click` / HUD Button |
-| **Toggle Auto-Fire (Demo)** | `T` | — |
-| **Pause / Resume** | `Escape` / `P` | HUD `||` Button |
-| **Restart Game** | `R` (Game Over) | UI Button |
+| **Move Ship 2D** | `W` `A` `S` `D` / Arrows | Left Stick / D-Pad (Gamepad) |
+| **Fire Blasters** | `Spacebar` / Left Click | `RT` / `A` (Gamepad + Haptics) |
+| **Tactical Dash (i-frame)**| `Left Shift` | `LB` / `B` (Gamepad) |
+| **Deploy EMP Nuke Bomb** | `B` / Right Click | `Y` / `RB` (Gamepad) |
+| **Pause / Resume** | `Escape` / `P` | `Start` (Gamepad) |
+| **Restart Game** | `R` (Game Over) | `A` / `Start` (Gamepad) |
 
 ---
 
 ## 🛠️ Architecture & Technology Stack
 
 - **Engine:** Unity 6 (6000.6.0f1)
-- **Render Pipeline:** Universal Render Pipeline (URP 2D)
-- **Input System:** Unity New Input System (`com.unity.inputsystem`) with Legacy Fallback
-- **Audio:** Multi-channel AudioSource pool with synthetic SFX generation and looped BGM
-- **UI Architecture:** ScreenSpace-Camera Canvas with modular card modals, responsive anchor scaling, and crisp bitmap/vector font rendering
+- **Render Pipeline:** Universal Render Pipeline (URP 2D) with Post-Processing Bloom & Vignette
+- **Input System:** Unity New Input System (`com.unity.inputsystem`) with Gamepad Dual-Motor Haptics
+- **Audio:** Multi-channel AudioSource pool with 132 BPM Synthwave & 66 BPM Ambient Pad generator
+- **UI Architecture:** Modular Partial Classes with Dirty-Flag Caching & Responsive Canvas
+- **Codebase Navigation:** Xem chi tiết cấu trúc phân vùng code tại [Assets/DIRECTORY_MAP.md](Assets/DIRECTORY_MAP.md)
 - **Assets:** [Kenney Space Shooter Remastered (CC0)](https://kenney.nl/assets/space-shooter-remastered)
 
 ---

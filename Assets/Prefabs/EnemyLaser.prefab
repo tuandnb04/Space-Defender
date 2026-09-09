@@ -183,3 +183,5 @@ MonoBehaviour:
   speed: 6.5
   topBoundaryOffset: 1
   isEnemyLaser: 1
+  damage: 1
+  isFeverLaser: 0

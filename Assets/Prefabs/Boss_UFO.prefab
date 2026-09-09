@@ -234,18 +234,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 011224d3b8f40ba4688f2492d55b2292, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BossController
-  maxHp: 20
-  currentHp: 20
-  scoreValue: 100
+  maxHp: 45
+  currentHp: 45
+  scoreValue: 250
   bossName: RED UFO MOTHERSHIP
+  variantIndex: 0
+  bossVariantSprites:
+  - {fileID: 774813160090618487, guid: a3e54883218d9034da6f3a1461dbc84b, type: 3}
+  - {fileID: 3432717553192849819, guid: faa8a25ff09dc434abae264ac16289c1, type: 3}
+  - {fileID: 8512384730916251377, guid: 1879b085c83e3bf448ab2104148801d4, type: 3}
+  - {fileID: -8082249768011107866, guid: 48950a94e2103864ba2bff14b82ab48b, type: 3}
   entrySpeed: 2
   targetY: 2.8
   patrolSpeed: 1.8
   patrolAmplitude: 2.5
   enemyLaserPrefab: {fileID: 513577091899842174, guid: 7624d2da5b0e7334d9eb18d7649f4477, type: 3}
-  attackInterval: 1.4
+  attackInterval: 1.2
   leftFirePoint: {fileID: 7081925853187170484}
   rightFirePoint: {fileID: 4179051783251614527}
+  shieldVisual: {fileID: 0}
+  dronePrefab: {fileID: 0}
+  starPrefab: {fileID: 0}
   explosionPrefab: {fileID: 5339094264529407694, guid: e981189c1b886d146940b6c45409c383, type: 3}
   floatingScorePrefab: {fileID: 3984610231378231889, guid: ccc79b6ea488c5f458d89406c4f4f05e, type: 3}
   dropPowerUpPrefabs:

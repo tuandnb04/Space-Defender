@@ -1,14 +1,21 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Combat;
+using Core;
+using Enemies;
+using Environment;
+using Player;
+using UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-namespace SpaceDefender.Editor
+namespace Editor
 {
     public static class SpaceDefenderSetup
     {
@@ -160,9 +167,13 @@ namespace SpaceDefender.Editor
             var enemyLaserSprite = LoadSprite($"{KenneyBasePath}/PNG/Lasers/laserRed01.png");
             var enemyLaserPrefab = CreateEnemyLaserPrefab(enemyLaserSprite);
 
-            // 8. Create Boss UFO Prefab
-            var bossSprite = LoadSprite($"{KenneyBasePath}/PNG/ufoRed.png");
-            var bossPrefab = CreateBossPrefab(bossSprite, enemyLaserPrefab, explosionPrefab, floatingScorePrefab,
+            // 8. Create Boss UFO Prefab (4 UFO Variants)
+            var bossSpriteRed = LoadSprite($"{KenneyBasePath}/PNG/ufoRed.png");
+            var bossSpriteBlue = LoadSprite($"{KenneyBasePath}/PNG/ufoBlue.png");
+            var bossSpriteGreen = LoadSprite($"{KenneyBasePath}/PNG/ufoGreen.png");
+            var bossSpriteYellow = LoadSprite($"{KenneyBasePath}/PNG/ufoYellow.png");
+            var bossSprites = new[] { bossSpriteRed, bossSpriteBlue, bossSpriteGreen, bossSpriteYellow };
+            var bossPrefab = CreateBossPrefab(bossSprites, enemyLaserPrefab, explosionPrefab, floatingScorePrefab,
                 powerUpPrefabs);
 
             // 9. Create Shockwave Prefab
@@ -210,10 +221,8 @@ namespace SpaceDefender.Editor
             // 13. Setup Scene GameObjects
             SetupScene(
                 playerPrefab,
-                laserPrefab,
                 enemyPrefabs.ToArray(),
                 bossPrefab,
-                shockwavePrefab,
                 shipSprites,
                 shootClip,
                 enemyShootClip,
@@ -232,8 +241,8 @@ namespace SpaceDefender.Editor
                 heartSprite);
 
             AssetDatabase.SaveAssets();
-            EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
-            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
+            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+            EditorSceneManager.SaveScene(SceneManager.GetActiveScene());
             Debug.Log("[SpaceDefenderSetup] Elite Arcade Master Scene Setup Completed Successfully!");
         }
 
@@ -430,7 +439,7 @@ namespace SpaceDefender.Editor
         }
 
         private static GameObject CreateBossPrefab(
-            Sprite sprite,
+            Sprite[] sprites,
             GameObject enemyLaserPrefab,
             GameObject explosionVFX,
             GameObject floatingScorePrefab,
@@ -439,37 +448,40 @@ namespace SpaceDefender.Editor
             var path = $"{PrefabFolderPath}/Boss_UFO.prefab";
             var go = new GameObject("Boss_UFO");
 
+            var firstSprite = sprites is { Length: > 0 } ? sprites[0] : null;
+
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite = sprite;
+            sr.sprite = firstSprite;
             sr.sortingOrder = 7;
 
             var col = go.AddComponent<CircleCollider2D>();
             col.isTrigger = true;
-            if (sprite != null) col.radius = sprite.bounds.size.x * 0.45f;
+            if (firstSprite != null) col.radius = firstSprite.bounds.size.x * 0.45f;
 
             var rb = go.AddComponent<Rigidbody2D>();
             rb.bodyType = RigidbodyType2D.Kinematic;
 
-            var leftFP = new GameObject("LeftFirePoint");
-            leftFP.transform.SetParent(go.transform);
-            leftFP.transform.localPosition = new Vector3(-0.6f, -0.4f, 0f);
+            var leftFp = new GameObject("LeftFirePoint");
+            leftFp.transform.SetParent(go.transform);
+            leftFp.transform.localPosition = new Vector3(-0.6f, -0.4f, 0f);
 
-            var rightFP = new GameObject("RightFirePoint");
-            rightFP.transform.SetParent(go.transform);
-            rightFP.transform.localPosition = new Vector3(0.6f, -0.4f, 0f);
+            var rightFp = new GameObject("RightFirePoint");
+            rightFp.transform.SetParent(go.transform);
+            rightFp.transform.localPosition = new Vector3(0.6f, -0.4f, 0f);
 
             var boss = go.AddComponent<BossController>();
-            boss.maxHp = 20;
-            boss.scoreValue = 100;
+            boss.maxHp = 45;
+            boss.scoreValue = 250;
             boss.bossName = "RED UFO MOTHERSHIP";
+            boss.bossVariantSprites = sprites;
             boss.entrySpeed = 2.0f;
             boss.targetY = 2.8f;
             boss.patrolSpeed = 1.8f;
             boss.patrolAmplitude = 2.5f;
             boss.enemyLaserPrefab = enemyLaserPrefab;
-            boss.attackInterval = 1.4f;
-            boss.leftFirePoint = leftFP.transform;
-            boss.rightFirePoint = rightFP.transform;
+            boss.attackInterval = 1.2f;
+            boss.leftFirePoint = leftFp.transform;
+            boss.rightFirePoint = rightFp.transform;
             boss.explosionPrefab = explosionVFX;
             boss.floatingScorePrefab = floatingScorePrefab;
             boss.dropPowerUpPrefabs = dropPowerUps;
@@ -532,8 +544,10 @@ namespace SpaceDefender.Editor
         {
             var path = $"{PrefabFolderPath}/Player.prefab";
 
-            var go = new GameObject("Player");
-            go.tag = "Player";
+            var go = new GameObject("Player")
+            {
+                tag = "Player"
+            };
 
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
@@ -617,10 +631,8 @@ namespace SpaceDefender.Editor
 
         private static void SetupScene(
             GameObject playerPrefab,
-            GameObject laserPrefab,
             GameObject[] enemyPrefabs,
             GameObject bossPrefab,
-            GameObject shockwavePrefab,
             Sprite[] shipSprites,
             AudioClip shootClip,
             AudioClip enemyShootClip,
@@ -662,7 +674,7 @@ namespace SpaceDefender.Editor
                 "Player", "BackgroundScroller", "EnemySpawner", "GameManager", "AudioManager", "UIManager", "Canvas",
                 "EventSystem", "ComboManager", "AchievementManager"
             };
-            var roots = EditorSceneManager.GetActiveScene().GetRootGameObjects();
+            var roots = SceneManager.GetActiveScene().GetRootGameObjects();
             foreach (var root in roots)
                 if (cleanNames.Contains(root.name) || root.name.Contains("(Clone)"))
                     Object.DestroyImmediate(root);
@@ -1076,29 +1088,33 @@ namespace SpaceDefender.Editor
             subRect.anchoredPosition = new Vector2(0, 360);
             subRect.sizeDelta = new Vector2(600, 50);
 
-            // Main Menu Buttons
+            // Main Menu Buttons (cleanly spaced, no overlap)
             var playBtnObj = CreateButton(mainMenuPanel.transform, "PlayButton", "PLAY", gameFont, greenBtnSprite,
-                new Vector2(0, 190), new Vector2(420, 95), 38);
+                new Vector2(0, 235), new Vector2(420, 85), 36);
             var playBtn = playBtnObj.GetComponent<Button>();
 
             var hangarBtnObj = CreateButton(mainMenuPanel.transform, "HangarButton", "HANGAR", gameFont, blueBtnSprite,
-                new Vector2(0, 85), new Vector2(420, 85), 32);
+                new Vector2(0, 145), new Vector2(420, 78), 30);
             var hangarBtn = hangarBtnObj.GetComponent<Button>();
 
+            var leaderboardBtnObj = CreateButton(mainMenuPanel.transform, "LeaderboardButton", "LEADERBOARD", gameFont,
+                blueBtnSprite, new Vector2(0, 60), new Vector2(420, 78), 28);
+            var leaderboardBtn = leaderboardBtnObj.GetComponent<Button>();
+
             var achBtnObj = CreateButton(mainMenuPanel.transform, "AchievementsButton", "ACHIEVEMENTS", gameFont,
-                yellowBtnSprite, new Vector2(0, -15), new Vector2(420, 85), 28);
+                yellowBtnSprite, new Vector2(0, -25), new Vector2(420, 78), 28);
             var achBtn = achBtnObj.GetComponent<Button>();
 
             var howToPlayBtnObj = CreateButton(mainMenuPanel.transform, "HowToPlayButton", "HOW TO PLAY", gameFont,
-                blueBtnSprite, new Vector2(0, -115), new Vector2(420, 85), 28);
+                blueBtnSprite, new Vector2(0, -110), new Vector2(420, 78), 28);
             var howToPlayBtn = howToPlayBtnObj.GetComponent<Button>();
 
             var settingsBtnObj = CreateButton(mainMenuPanel.transform, "SettingsButton", "SETTINGS", gameFont,
-                blueBtnSprite, new Vector2(0, -215), new Vector2(420, 85), 30);
+                blueBtnSprite, new Vector2(0, -195), new Vector2(420, 78), 28);
             var settingsBtn = settingsBtnObj.GetComponent<Button>();
 
             var exitBtnObj = CreateButton(mainMenuPanel.transform, "ExitButton", "EXIT", gameFont, redBtnSprite,
-                new Vector2(0, -320), new Vector2(420, 85), 32);
+                new Vector2(0, -285), new Vector2(420, 78), 30);
             var exitBtn = exitBtnObj.GetComponent<Button>();
 
             // How To Play Modal
@@ -1259,7 +1275,7 @@ namespace SpaceDefender.Editor
             shipImgObj.transform.SetParent(hangarModal.transform, false);
             var shipPreview = shipImgObj.AddComponent<Image>();
             shipPreview.preserveAspect = true;
-            if (shipSprites != null && shipSprites.Length > 0 && shipSprites[0] != null)
+            if (shipSprites is { Length: > 0 } && shipSprites[0] != null)
                 shipPreview.sprite = shipSprites[0];
             var spRect = shipImgObj.GetComponent<RectTransform>();
             spRect.anchoredPosition = new Vector2(0, 190);
@@ -1350,6 +1366,43 @@ namespace SpaceDefender.Editor
                 new Vector2(0, -360), new Vector2(300, 80), 30);
             var closeAchBtn = closeAchBtnObj.GetComponent<Button>();
             achModal.SetActive(false);
+
+            // ================== LEADERBOARD MODAL ==================
+            var lbModal = new GameObject("LeaderboardModal");
+            lbModal.transform.SetParent(canvasObj.transform, false);
+            var lbBg = lbModal.AddComponent<Image>();
+            lbBg.color = new Color(0.04f, 0.08f, 0.18f, 0.96f);
+            var lbRect = lbModal.GetComponent<RectTransform>();
+            lbRect.anchoredPosition = Vector2.zero;
+            lbRect.sizeDelta = new Vector2(860, 920);
+
+            var lbTitle = new GameObject("ModalTitle");
+            lbTitle.transform.SetParent(lbModal.transform, false);
+            var lbt = lbTitle.AddComponent<Text>();
+            lbt.text = "TOP 5 LEADERBOARD";
+            if (gameFont != null) lbt.font = gameFont;
+            lbt.fontSize = 44;
+            lbt.alignment = TextAnchor.MiddleCenter;
+            lbt.color = new Color(1f, 0.85f, 0.2f);
+            lbTitle.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 380);
+            lbTitle.GetComponent<RectTransform>().sizeDelta = new Vector2(700, 80);
+
+            var lbListObj = new GameObject("LeaderboardList");
+            lbListObj.transform.SetParent(lbModal.transform, false);
+            var lbListText = lbListObj.AddComponent<Text>();
+            lbListText.text = "Loading leaderboard...";
+            if (gameFont != null) lbListText.font = gameFont;
+            lbListText.fontSize = 24;
+            lbListText.lineSpacing = 1.3f;
+            lbListText.alignment = TextAnchor.MiddleLeft;
+            lbListText.color = Color.white;
+            lbListObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 10);
+            lbListObj.GetComponent<RectTransform>().sizeDelta = new Vector2(760, 600);
+
+            var closeLbBtnObj = CreateButton(lbModal.transform, "CloseLeaderboardBtn", "CLOSE", gameFont, blueBtnSprite,
+                new Vector2(0, -360), new Vector2(300, 80), 30);
+            var closeLbBtn = closeLbBtnObj.GetComponent<Button>();
+            lbModal.SetActive(false);
 
             // ================== F. ACHIEVEMENT TOAST ==================
             var toastObj = new GameObject("AchievementToast");
@@ -1503,6 +1556,10 @@ namespace SpaceDefender.Editor
             uiManager.howToPlayModal = modalObj;
             uiManager.closeHowToPlayButton = closeModalBtn;
             uiManager.openHangarButton = hangarBtn;
+            uiManager.openLeaderboardButton = leaderboardBtn;
+            uiManager.leaderboardModal = lbModal;
+            uiManager.leaderboardListText = lbListText;
+            uiManager.closeLeaderboardButton = closeLbBtn;
             uiManager.openAchievementsButton = achBtn;
             uiManager.openSettingsButton = settingsBtn;
             uiManager.exitButton = exitBtn;

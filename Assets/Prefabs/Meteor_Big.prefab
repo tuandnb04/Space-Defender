@@ -194,10 +194,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b13580dffe7a42744808f0632900bef5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Enemy
+  maxHp: 1
+  currentHp: 1
+  behaviorType: 0
   speed: 2.5
   rotationSpeed: 45
   bottomBoundaryOffset: 1.5
+  sineFrequency: 3
+  sineAmplitude: 1.5
+  diveYThreshold: 1.2
+  diveSpeed: 7.5
+  sniperHoldY: 3
+  sniperAimDuration: 0.9
+  aimLine: {fileID: 0}
   scoreValue: 10
+  starPrefab: {fileID: 0}
+  starDropCount: 2
   explosionPrefab: {fileID: 5339094264529407694, guid: e981189c1b886d146940b6c45409c383, type: 3}
   floatingScorePrefab: {fileID: 3984610231378231889, guid: ccc79b6ea488c5f458d89406c4f4f05e, type: 3}
   powerUpPrefabs:
@@ -205,6 +217,8 @@ MonoBehaviour:
   - {fileID: 3785531877311822139, guid: d51f9f7474899e74e852d5a231142b1b, type: 3}
   - {fileID: 8217091128884909298, guid: 1bd7c0635f0fead42a7d27aaca820149, type: 3}
   dropChance: 0.25
+  chainExplosionRadius: 1.4
+  chainDamage: 2
   canShoot: 0
   enemyLaserPrefab: {fileID: 0}
   minShootDelay: 1.4

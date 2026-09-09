@@ -3,7 +3,7 @@ using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace SpaceDefender.Editor
+namespace Editor
 {
     public static class GameBuilder
     {
