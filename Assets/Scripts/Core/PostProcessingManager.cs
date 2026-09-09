@@ -14,10 +14,13 @@ namespace Core
         private Bloom _bloom;
         private ChromaticAberration _chromaticAberration;
         private Coroutine _feverBloomCoroutine;
-
         private Coroutine _glitchCoroutine;
         private bool _isLowHealthPulsing;
         private Vignette _vignette;
+
+        // Vignette throttle — avoid setting GPU state every frame when value barely changes
+        private float _lastVignetteIntensity = -1f;
+        private static readonly Color LowHealthVignetteColor = new(0.85f, 0.1f, 0.15f);
 
         public static PostProcessingManager Instance
         {
@@ -43,10 +46,15 @@ namespace Core
         private void Update()
         {
             // Low health heartbeat vignette pulsation
-            if (!_isLowHealthPulsing || _vignette == null) return;
+            if (!_isLowHealthPulsing || !_vignette) return;
+
             var pulse = 0.30f + 0.10f * Mathf.Sin(Time.time * 6.5f);
+
+            // Only write to the Volume override when value changes by > 0.005 — avoids GPU state spam
+            if (!(Mathf.Abs(pulse - _lastVignetteIntensity) > 0.005f)) return;
             _vignette.intensity.value = pulse;
-            _vignette.color.value = new Color(0.85f, 0.1f, 0.15f);
+            _vignette.color.value = LowHealthVignetteColor;
+            _lastVignetteIntensity = pulse;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -77,7 +85,7 @@ namespace Core
 
         public void UpdateHealthVignette(int lives, int maxLives = 3)
         {
-            if (_vignette == null) return;
+            if (!_vignette) return;
 
             if (lives is <= 1 and > 0)
             {
@@ -102,14 +110,14 @@ namespace Core
             if (_glitchCoroutine != null) StopCoroutine(_glitchCoroutine);
             _glitchCoroutine = StartCoroutine(ChromaticGlitchRoutine(1.0f, 1.2f));
 
-            if (_bloom == null) return;
+            if (!_bloom) return;
             if (_feverBloomCoroutine != null) StopCoroutine(_feverBloomCoroutine);
             _feverBloomCoroutine = StartCoroutine(BloomFlashRoutine(2.5f, 0.8f));
         }
 
         public void SetFeverBloom(bool isFever)
         {
-            if (_bloom == null) return;
+            if (!_bloom) return;
             if (_feverBloomCoroutine != null) StopCoroutine(_feverBloomCoroutine);
             _feverBloomCoroutine =
                 StartCoroutine(isFever ? BloomTransitionRoutine(2.2f, 0.3f) : BloomTransitionRoutine(1.45f, 0.5f));
@@ -117,7 +125,7 @@ namespace Core
 
         private IEnumerator ChromaticGlitchRoutine(float targetIntensity, float duration)
         {
-            if (_chromaticAberration == null) yield break;
+            if (!_chromaticAberration) yield break;
 
             _chromaticAberration.intensity.value = targetIntensity;
             var elapsed = 0f;
@@ -136,7 +144,7 @@ namespace Core
 
         private IEnumerator BloomFlashRoutine(float peakBloom, float duration)
         {
-            if (_bloom == null) yield break;
+            if (!_bloom) yield break;
             _bloom.intensity.value = peakBloom;
             var elapsed = 0f;
 
@@ -152,7 +160,7 @@ namespace Core
 
         private IEnumerator BloomTransitionRoutine(float targetBloom, float duration)
         {
-            if (_bloom == null) yield break;
+            if (!_bloom) yield break;
             var start = _bloom.intensity.value;
             var elapsed = 0f;
 

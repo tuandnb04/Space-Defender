@@ -23,6 +23,9 @@ namespace Enemies
     {
         public static readonly List<Enemy> ActiveEnemies = new(32);
         private static int _chainReactionDepth;
+
+        // Cached once per scene — avoids expensive Camera.main string lookup every Start()
+        private static Camera _mainCam;
         [Header("Enemy Stats")] public int maxHp = 1;
 
         public int currentHp = 1;
@@ -81,18 +84,26 @@ namespace Enemies
 
         private void Start()
         {
+            // Start is only called on first activation; full state reset happens in OnEnable for pool reuse.
+            ResetState();
+        }
+
+        private void ResetState()
+        {
+            IsDead = false;
             currentHp = maxHp;
             _spawnTime = Time.time;
             _spawnOrigin = transform.position;
+            _isDiving = false;
+            _isAimingSniper = false;
 
-            var cam = Camera.main;
-            if (cam != null) _bottomY = -cam.orthographicSize - bottomBoundaryOffset;
+            // Use cached camera — Camera.main is a slow string lookup
+            if (_mainCam == null) _mainCam = Camera.main;
+            if (_mainCam != null) _bottomY = -_mainCam.orthographicSize - bottomBoundaryOffset;
 
             speed *= Random.Range(0.9f, 1.2f);
 
             if (canShoot) _nextShootTime = Time.time + Random.Range(minShootDelay, maxShootDelay);
-
-            if (EnemySpawner.Instance != null) EnemySpawner.Instance.RegisterEnemy(gameObject);
         }
 
         private void Update()
@@ -132,6 +143,16 @@ namespace Enemies
         private void OnEnable()
         {
             if (!ActiveEnemies.Contains(this)) ActiveEnemies.Add(this);
+
+            // Reset state when recycled from pool (OnEnable is called on every pool reuse)
+            // IsDead guard prevents double-reset on fresh Instantiate (Start runs after OnEnable)
+            if (IsDead)
+            {
+                IsDead = false;
+                ResetState();
+            }
+
+            if (EnemySpawner.Instance != null) EnemySpawner.Instance.RegisterEnemy(gameObject);
         }
 
         private void OnDisable()
@@ -146,7 +167,6 @@ namespace Enemies
             if (aimLine != null) Destroy(aimLine);
             if (EnemySpawner.Instance == null) return;
             EnemySpawner.Instance.UnregisterEnemy(gameObject);
-            EnemySpawner.Instance.OnEnemyRemoved();
         }
 
         private void OnCollisionEnter2D(Collision2D collision)
@@ -179,10 +199,10 @@ namespace Enemies
 
             if (!(transform.position.y <= diveYThreshold)) return;
             _isDiving = true;
-            if (_flashEffect != null) _flashEffect.Flash(0.14f, new Color(1f, 0.7f, 0.1f));
+            if (_flashEffect) _flashEffect.Flash(0.14f, new Color(1f, 0.7f, 0.1f));
             diveSpeed = 6.5f;
             var player = PlayerController.Instance;
-            if (player != null)
+            if (player)
             {
                 _diveTargetDir = (player.CockpitPosition - transform.position).normalized;
                 var angle = Mathf.Atan2(_diveTargetDir.y, _diveTargetDir.x) * Mathf.Rad2Deg + 90f;
@@ -215,7 +235,7 @@ namespace Enemies
             var player = PlayerController.Instance;
             var aimElapsed = 0f;
 
-            if (aimLine == null)
+            if (!aimLine)
             {
                 aimLine = gameObject.AddComponent<LineRenderer>();
                 aimLine.material = new Material(Shader.Find("Sprites/Default"));
@@ -232,7 +252,7 @@ namespace Enemies
 
             while (aimElapsed < sniperAimDuration && !IsDead)
             {
-                if (player != null && aimLine != null)
+                if (player && aimLine)
                 {
                     aimLine.SetPosition(0, transform.position);
                     aimLine.SetPosition(1, player.CockpitPosition);
@@ -242,22 +262,22 @@ namespace Enemies
                 yield return null;
             }
 
-            if (aimLine != null) aimLine.enabled = false;
+            if (aimLine) aimLine.enabled = false;
 
-            if (!IsDead && enemyLaserPrefab != null && player != null)
+            if (!IsDead && enemyLaserPrefab && player)
             {
                 var dir = (player.CockpitPosition - transform.position).normalized;
                 var angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg + 90f;
                 var laserObj = ObjectPoolManager.Spawn(enemyLaserPrefab, transform.position + dir * 0.4f,
                     Quaternion.Euler(0f, 0f, angle));
                 var laser = laserObj ? laserObj.GetComponent<Laser>() : null;
-                if (laser != null)
+                if (laser)
                 {
                     laser.isEnemyLaser = true;
                     laser.speed = 16f;
                 }
 
-                if (AudioManager.Instance != null) AudioManager.Instance.PlayEnemyShoot();
+                if (AudioManager.Instance) AudioManager.Instance.PlayEnemyShoot();
             }
 
             _isAimingSniper = false;
@@ -273,7 +293,7 @@ namespace Enemies
             var spawnPos = transform.position + Vector3.down * 0.5f;
             var laserObj = ObjectPoolManager.Spawn(enemyLaserPrefab, spawnPos, Quaternion.identity);
             var laser = laserObj ? laserObj.GetComponent<Laser>() : null;
-            if (laser != null)
+            if (laser)
             {
                 laser.isEnemyLaser = true;
                 laser.speed = 8.5f;
@@ -293,9 +313,9 @@ namespace Enemies
 
             currentHp -= damage;
 
-            if (_flashEffect != null) _flashEffect.Flash(0.08f, isPointBlank ? new Color(1f, 0.4f, 0.2f) : Color.white);
+            if (_flashEffect) _flashEffect.Flash(0.08f, isPointBlank ? new Color(1f, 0.4f, 0.2f) : Color.white);
 
-            if (isPointBlank && floatingScorePrefab != null)
+            if (isPointBlank && floatingScorePrefab)
                 FloatingScore.SpawnText(floatingScorePrefab, transform.position + Vector3.up * 0.5f,
                     "CRITICAL POINT-BLANK!", new Color(1f, 0.3f, 0.2f));
 
@@ -307,7 +327,7 @@ namespace Enemies
             if (IsDead) return;
             IsDead = true;
 
-            if (aimLine != null) aimLine.enabled = false;
+            if (aimLine) aimLine.enabled = false;
 
             var finalScore = scoreValue * (isPointBlank ? 2 : 1);
             if (ComboManager.Instance)
@@ -327,7 +347,7 @@ namespace Enemies
             if (explosionPrefab) Instantiate(explosionPrefab, transform.position, Quaternion.identity);
 
             // Dopamine Loop: Overload Gauge +5%
-            if (PlayerController.Instance != null) PlayerController.Instance.AddOverload(5f);
+            if (PlayerController.Instance) PlayerController.Instance.AddOverload(5f);
 
             // Drop Stars (musical scale)
             DropStars(isPointBlank);
@@ -338,9 +358,14 @@ namespace Enemies
             // Smart Power-up Drop
             TrySmartDropPowerUp();
 
-            Destroy(gameObject);
+            // Unregister before despawn so counter is accurate
+            if (EnemySpawner.Instance) EnemySpawner.Instance.UnregisterEnemy(gameObject);
+
+            // Return to pool instead of destroying — zero GC allocation
+            ObjectPoolManager.Despawn(gameObject);
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
         private void TriggerChainReaction()
         {
             if (_chainReactionDepth >= 3) return;
@@ -365,16 +390,17 @@ namespace Enemies
             }
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
         private void DropStars(bool vacuumDirectly = false)
         {
             var count = IsPointBlankDrop(vacuumDirectly) ? starDropCount * 2 : starDropCount;
             for (var i = 0; i < count; i++)
             {
                 var offset = (Vector3)Random.insideUnitCircle * 0.4f;
-                if (starPrefab == null) continue;
+                if (!starPrefab) continue;
                 var starObj = ObjectPoolManager.Spawn(starPrefab, transform.position + offset, Quaternion.identity);
                 var star = starObj ? starObj.GetComponent<StarPickup>() : null;
-                if (star != null && vacuumDirectly) star.AttractToPlayerImmediately();
+                if (star && vacuumDirectly) star.AttractToPlayerImmediately();
             }
         }
 
@@ -383,6 +409,7 @@ namespace Enemies
             return pointBlank;
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
         private void TrySmartDropPowerUp()
         {
             if (powerUpPrefabs == null || powerUpPrefabs.Length == 0) return;
@@ -422,8 +449,7 @@ namespace Enemies
                             continue;
                     }
 
-                    if (player.weaponLevel >= 5 && (comp.powerUpType == PowerUpType.PowerCore ||
-                                                    comp.powerUpType == PowerUpType.TripleShot)) continue;
+                    if (player.weaponLevel >= 5 && comp.powerUpType is PowerUpType.PowerCore or PowerUpType.TripleShot) continue;
                 }
 
                 candidates.Add(p);

@@ -31,17 +31,11 @@ namespace Environment
 
         private void Update()
         {
-            if (!_playerTransform && PlayerController.Instance != null)
-            {
-                _playerController = PlayerController.Instance;
-                _playerTransform = _playerController.transform;
-            }
-
-            if (_playerTransform != null)
+            if (_playerTransform is not null)
             {
                 var diff = _playerTransform.position - transform.position;
                 var sqrDist = diff.sqrMagnitude;
-                var magnetRadius = _playerController != null ? PlayerController.GetMagnetRadius() : 2.2f;
+                var magnetRadius = _playerController ? PlayerController.GetMagnetRadius() : 2.2f;
 
                 if (sqrDist <= magnetRadius * magnetRadius || isAttracted)
                 {

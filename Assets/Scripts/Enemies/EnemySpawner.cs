@@ -13,25 +13,25 @@ namespace Enemies
         private static EnemySpawner _instance;
 
         [Header("Prefabs")] public GameObject[] enemyPrefabs;
-
         public GameObject bossPrefab;
         public GameObject splittingMeteorPrefab;
 
         [Header("Spawn Position")] public float horizontalPadding = 0.8f;
-
         public float spawnYOffset = 1.0f;
 
         [Header("Wave Configuration")] public int currentWave = 1;
-
         public int baseEnemiesPerWave = 6;
         public int enemyIncreasePerWave = 3;
-        public int bossWaveInterval = 4; // Boss on Wave 4, 8, 12...
+        public int bossWaveInterval = 4;
 
-        // Robust dynamic enemy tracking (Zero Leaks, Zero Hangs)
-        private readonly HashSet<GameObject> _activeLivingEnemies = new();
+        // ─── Lightweight alive-enemy counter (zero GC, zero HashSet overhead) ───
+        // Incremented by RegisterEnemy, decremented by UnregisterEnemy.
+        // No RemoveWhere(), no LINQ, no allocations.
+
         private readonly List<GameObject> _shipPrefabs = new();
         private int _enemiesSpawnedThisWave;
         private bool _isBossActive;
+        private BossController _activeBoss; // direct reference — no FindAnyObjectByType in loops
 
         private float _maxX;
         private float _minX;
@@ -50,14 +50,8 @@ namespace Enemies
             private set => _instance = value;
         }
 
-        private int ActiveLivingEnemyCount
-        {
-            get
-            {
-                _activeLivingEnemies.RemoveWhere(e => e == null);
-                return _activeLivingEnemies.Count;
-            }
-        }
+        // Simple, alloc-free alive count
+        private int ActiveLivingEnemyCount { get; set; }
 
         private void Awake()
         {
@@ -75,7 +69,7 @@ namespace Enemies
             _shipPrefabs.Clear();
             if (enemyPrefabs != null)
                 foreach (var p in enemyPrefabs)
-                    if (p != null && !p.name.ToLower().Contains("meteor"))
+                    if (p && !p.name.ToLower().Contains("meteor"))
                         _shipPrefabs.Add(p);
 
             if (_shipPrefabs.Count == 0 && enemyPrefabs is { Length: > 0 })
@@ -108,22 +102,21 @@ namespace Enemies
 
         public void RegisterEnemy(GameObject enemyObj)
         {
-            if (enemyObj != null) _activeLivingEnemies.Add(enemyObj);
+            if (enemyObj != null) ActiveLivingEnemyCount++;
         }
 
         public void UnregisterEnemy(GameObject enemyObj)
         {
-            if (enemyObj != null) _activeLivingEnemies.Remove(enemyObj);
+            if (enemyObj && ActiveLivingEnemyCount > 0) ActiveLivingEnemyCount--;
         }
 
-        public void OnEnemyRemoved()
-        {
-            _activeLivingEnemies.RemoveWhere(e => e == null);
-        }
+        // Legacy compatibility shim — no-op now that we use a counter
+        public void OnEnemyRemoved() { }
 
         public void OnBossDefeated()
         {
             _isBossActive = false;
+            _activeBoss = null;
         }
 
         public void StartWaveSequence()
@@ -140,7 +133,6 @@ namespace Enemies
 
             while (true)
             {
-                // Wait while game is not running or paused
                 while (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver))
                     yield return new WaitForSeconds(0.2f);
 
@@ -153,7 +145,6 @@ namespace Enemies
                     // =================== BOSS WAVE ===================
                     _isBossActive = true;
 
-                    // Warning Alert with Boss Variant Name
                     var bossTier = Mathf.Max(1, currentWave / bossWaveInterval);
                     var variant = (bossTier - 1) % 4;
                     var variantNames = new[]
@@ -169,85 +160,71 @@ namespace Enemies
 
                     yield return new WaitForSeconds(2.0f);
 
-                    // Spawn Boss with wave tier scaling & variant
                     var spawnPos = new Vector3(0f, _spawnY, 0f);
                     var bossObj = Instantiate(bossPrefab, spawnPos, Quaternion.identity);
-                    var bossComp = bossObj.GetComponent<BossController>();
-                    if (bossComp != null) bossComp.ConfigureBossVariant(variant, currentWave);
+                    _activeBoss = bossObj.GetComponent<BossController>();
+                    if (_activeBoss) _activeBoss.ConfigureBossVariant(variant, currentWave);
 
-                    // Wait until boss is defeated with failsafe assertion
+                    // Wait using the direct reference — no FindAnyObjectByType scan every 0.25s
                     while (_isBossActive)
                     {
-                        var bossExists = FindAnyObjectByType<BossController>(FindObjectsInactive.Exclude) != null;
-                        if (!bossExists)
+                        if (!_activeBoss)
                         {
+                            // Boss was destroyed (e.g. game reset) — treat as defeated
                             _isBossActive = false;
                             break;
                         }
-
                         yield return new WaitForSeconds(0.25f);
                     }
-
-                    // Boss defeated -> wave clear!
                 }
                 else
                 {
                     // =================== REGULAR WAVE ===================
                     _totalWaveEnemies = baseEnemiesPerWave + (currentWave - 1) * enemyIncreasePerWave;
                     _enemiesSpawnedThisWave = 0;
-                    _activeLivingEnemies.Clear();
+                    ActiveLivingEnemyCount = 0;
 
-                    // Wave Start Announcement (1.5s display, but spawns begin after 0.35s)
                     if (UIManager.Instance)
-                        UIManager.Instance.ShowWaveBanner($"WAVE {currentWave}", "ENGAGE HOSTILE FLEET", Color.cyan,
-                            1.5f);
+                        UIManager.Instance.ShowWaveBanner($"WAVE {currentWave}", "ENGAGE HOSTILE FLEET", Color.cyan, 1.5f);
 
                     yield return new WaitForSeconds(0.35f);
 
-                    // Spawn fleet with dynamic pacing & squad formations
                     while (_enemiesSpawnedThisWave < _totalWaveEnemies)
                     {
-                        if (GameManager.Instance &&
-                            (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver))
+                        if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver))
                         {
                             yield return new WaitForSeconds(0.25f);
                             continue;
                         }
 
-                        // Screen Density Cap: if 4 or more enemies are on screen, give player breathing room
+                        // Screen Density Cap
                         while (ActiveLivingEnemyCount >= 4)
                         {
                             yield return new WaitForSeconds(0.4f);
-                            if (GameManager.Instance &&
-                                (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver))
+                            if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver))
                                 break;
                         }
 
-                        // Dynamic Pacing:
-                        // If no active enemies are alive on screen, micro-breath 0.2s then spawn!
                         if (ActiveLivingEnemyCount == 0)
                         {
                             yield return new WaitForSeconds(0.2f);
-                            SpawnWaveUnitOrSquad();
                         }
                         else
                         {
-                            // Snappy combat delay: 0.40s - 0.85s
                             var minDelay = Mathf.Max(0.40f, 0.75f - currentWave * 0.03f);
                             var maxDelay = Mathf.Max(0.60f, 1.05f - currentWave * 0.04f);
                             yield return new WaitForSeconds(Random.Range(minDelay, maxDelay));
 
-                            if (GameManager.Instance &&
-                                (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver))
+                            if (GameManager.Instance && (!GameManager.Instance.IsGameStarted || GameManager.Instance.IsGameOver))
                                 continue;
-
-                            SpawnWaveUnitOrSquad();
                         }
+
+                        SpawnWaveUnitOrSquad();
 
                         yield return null;
                     }
 
-                    // Wait until all living enemies in wave are eliminated, with 4.5s max safety timeout!
+                    // Wait for remaining enemies with 4.5s safety timeout
                     var waitElapsed = 0f;
                     while (ActiveLivingEnemyCount > 0 && waitElapsed < 4.5f)
                     {
@@ -255,10 +232,7 @@ namespace Enemies
                         waitElapsed += 0.15f;
                     }
 
-                    // Clear any stray off-screen references
-                    _activeLivingEnemies.Clear();
-
-                    // Wave completed!
+                    ActiveLivingEnemyCount = 0;
                 }
 
                 yield return StartCoroutine(WaveClearRoutine());
@@ -269,16 +243,11 @@ namespace Enemies
         {
             var bonusScore = currentWave * 50;
             if (GameManager.Instance) GameManager.Instance.AwardWaveBonus(currentWave, bonusScore);
-
             if (AudioManager.Instance) AudioManager.Instance.PlayWaveClear();
-
             if (UIManager.Instance)
                 UIManager.Instance.ShowWaveBanner($"WAVE {currentWave} CLEARED!", $"+{bonusScore} BONUS SCORE",
                     new Color(0.2f, 1f, 0.4f), 1.4f);
-
-            // Snappy 1.2s intermission for item collection and pacing
             yield return new WaitForSeconds(1.2f);
-
             currentWave++;
         }
 
@@ -286,8 +255,8 @@ namespace Enemies
         {
             var remaining = _totalWaveEnemies - _enemiesSpawnedThisWave;
 
-            // Occasional Splitting Meteor (approx 20% of waves)
-            if (splittingMeteorPrefab != null && Random.value < 0.20f)
+            // Occasional Splitting Meteor (~20%)
+            if (splittingMeteorPrefab && Random.value < 0.20f)
             {
                 var meteorX = Random.Range(_minX, _maxX);
                 Instantiate(splittingMeteorPrefab, new Vector3(meteorX, _spawnY, 0f), Quaternion.identity);
@@ -297,20 +266,17 @@ namespace Enemies
 
             switch (remaining)
             {
-                // Duo flank squad (Wave 2+, remaining >= 2)
                 case >= 2 when currentWave >= 2 && Random.value < 0.35f:
                 {
                     var leftX = Random.Range(_minX, -0.6f);
                     var rightX = Random.Range(0.6f, _maxX);
                     var isKamikazeDuo = currentWave >= 3 && Random.value < 0.45f;
                     var beh = isKamikazeDuo ? (EnemyBehaviorType?)EnemyBehaviorType.SinusoidalKamikaze : null;
-
                     SpawnSingleEnemy(new Vector3(leftX, _spawnY, 0f), beh);
                     SpawnSingleEnemy(new Vector3(rightX, _spawnY, 0f), beh);
                     _enemiesSpawnedThisWave += 2;
                     return;
                 }
-                // V-Formation (Wave 3+, remaining >= 3)
                 case >= 3 when currentWave >= 3 && Random.value < 0.30f:
                 {
                     var centerX = Random.Range(_minX + 1.2f, _maxX - 1.2f);
@@ -322,7 +288,6 @@ namespace Enemies
                 }
             }
 
-            // Standard single enemy
             var randomX = Random.Range(_minX, _maxX);
             SpawnSingleEnemy(new Vector3(randomX, _spawnY, 0f));
             _enemiesSpawnedThisWave++;
@@ -337,9 +302,12 @@ namespace Enemies
             var prefab = _shipPrefabs[index];
             if (!prefab) return;
 
-            var enemyObj = Instantiate(prefab, pos, Quaternion.identity);
+            // Use ObjectPool instead of Instantiate — dramatically reduces GC allocations
+            var enemyObj = ObjectPoolManager.Spawn(prefab, pos, Quaternion.identity);
+            if (!enemyObj) return;
+
             var enemyComp = enemyObj.GetComponent<Enemy>();
-            if (!enemyComp) return;
+            if (!enemyComp) { ObjectPoolManager.Despawn(enemyObj); return; }
 
             // Progressive speed scaling
             var speedMultiplier = 1f + Mathf.Min((currentWave - 1) * 0.05f, 0.45f);
@@ -383,8 +351,9 @@ namespace Enemies
         public void ClearAllEnemies()
         {
             _isBossActive = false;
+            _activeBoss = null;
             _enemiesSpawnedThisWave = 0;
-            _activeLivingEnemies.Clear();
+            ActiveLivingEnemyCount = 0;
 
             if (_waveCoroutine != null)
             {
@@ -394,28 +363,23 @@ namespace Enemies
 
             var activeEnemies = FindObjectsByType<Enemy>(FindObjectsInactive.Exclude);
             foreach (var enemy in activeEnemies)
-                if (enemy != null)
-                    Destroy(enemy.gameObject);
+                if (enemy != null) ObjectPoolManager.Despawn(enemy.gameObject);
 
             var activeBosses = FindObjectsByType<BossController>(FindObjectsInactive.Exclude);
             foreach (var boss in activeBosses)
-                if (boss != null)
-                    Destroy(boss.gameObject);
+                if (boss != null) Destroy(boss.gameObject);
 
             var activeMeteors = FindObjectsByType<SplittingMeteor>(FindObjectsInactive.Exclude);
             foreach (var meteor in activeMeteors)
-                if (meteor != null)
-                    Destroy(meteor.gameObject);
+                if (meteor != null) Destroy(meteor.gameObject);
 
             var activePowerUps = FindObjectsByType<PowerUp>(FindObjectsInactive.Exclude);
             foreach (var pup in activePowerUps)
-                if (pup != null)
-                    Destroy(pup.gameObject);
+                if (pup != null) Destroy(pup.gameObject);
 
             var lasers = FindObjectsByType<Laser>(FindObjectsInactive.Exclude);
             foreach (var laser in lasers)
-                if (laser != null)
-                    Destroy(laser.gameObject);
+                if (laser != null) ObjectPoolManager.Despawn(laser.gameObject);
 
             if (UIManager.Instance == null) return;
             UIManager.Instance.ShowBossBar(false);
