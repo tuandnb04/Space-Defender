@@ -277,12 +277,12 @@ namespace Player
             if (_isDead) return;
             _isDead = true;
 
+            // Invalidate laser's cached player reference
+            Laser.InvalidatePlayerCache();
+
             if (CameraShake.Instance) CameraShake.Instance.Shake(0.5f, 0.35f);
-
             if (explosionPrefab) Instantiate(explosionPrefab, transform.position, Quaternion.identity);
-
             if (GameManager.Instance) GameManager.Instance.GameOver();
-
             gameObject.SetActive(false);
         }
 

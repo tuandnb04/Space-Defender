@@ -20,6 +20,10 @@ public partial class UIManager
     private int _lastWeaponLevel = -1;
     private Coroutine _waveBannerCoroutine;
 
+    // Pre-cached colors for boss warning flash — avoids new Color() allocation every 0.05s
+    private static readonly Color BossWarnColorA = new(1f, 0.15f, 0.15f);
+    private static readonly Color BossWarnColorB = new(1f, 0.9f, 0.2f);
+
     public void UpdateScore(int score, int highScore = 0)
     {
         if (_lastScore != score)
@@ -175,7 +179,7 @@ public partial class UIManager
             if (isWarning && waveBannerTitle)
             {
                 var flash = Mathf.PingPong(elapsed * 6f, 1f);
-                waveBannerTitle.color = Color.Lerp(new Color(1f, 0.15f, 0.15f), new Color(1f, 0.9f, 0.2f), flash);
+                waveBannerTitle.color = Color.Lerp(BossWarnColorA, BossWarnColorB, flash);
             }
 
             yield return new WaitForSeconds(0.05f);

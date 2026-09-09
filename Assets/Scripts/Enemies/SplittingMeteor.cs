@@ -40,11 +40,14 @@ namespace Enemies
             if (!_flashEffect) _flashEffect = gameObject.AddComponent<HitFlashEffect>();
         }
 
+        // Shared camera cache (same pattern as Enemy._mainCam)
+        private static Camera _mainCam;
+
         private void Start()
         {
             currentHp = maxHp;
-            var cam = Camera.main;
-            if (cam) _bottomY = -cam.orthographicSize - 1.5f;
+            if (_mainCam == null) _mainCam = Camera.main;
+            if (_mainCam) _bottomY = -_mainCam.orthographicSize - 1.5f;
 
             if (EnemySpawner.Instance) EnemySpawner.Instance.RegisterEnemy(gameObject);
         }
@@ -56,7 +59,9 @@ namespace Enemies
             transform.Translate(_moveDirection * (fallSpeed * Time.deltaTime), Space.World);
             transform.Rotate(0, 0, rotationSpeed * Time.deltaTime);
 
-            if (transform.position.y < _bottomY || Mathf.Abs(transform.position.x) > 10f) Destroy(gameObject);
+            if (!(transform.position.y < _bottomY) && !(Mathf.Abs(transform.position.x) > 10f)) return;
+            if (EnemySpawner.Instance) EnemySpawner.Instance.UnregisterEnemy(gameObject);
+            Destroy(gameObject); // Meteors are Instantiated not pooled, so Destroy is correct here
         }
 
         private void OnDestroy()
@@ -163,7 +168,9 @@ namespace Enemies
         private void SpawnChildMeteor(GameObject prefab, Vector2 direction)
         {
             var spawnPos = transform.position + (Vector3)(direction.normalized * 0.35f);
-            var obj = Instantiate(prefab, spawnPos, Quaternion.identity);
+            // Use pool if available, fallback to Instantiate
+            var obj = ObjectPoolManager.Spawn(prefab, spawnPos, Quaternion.identity);
+            if (!obj) return;
             var meteor = obj.GetComponent<SplittingMeteor>();
             if (meteor) meteor.InitializeChild(direction, 0.8f);
         }

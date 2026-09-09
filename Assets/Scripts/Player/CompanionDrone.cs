@@ -8,33 +8,35 @@ namespace Player
     public class CompanionDrone : MonoBehaviour
     {
         [Header("Orbit Settings")] public float orbitRadius = 1.35f;
-
         public float orbitSpeed = 150f;
         public float angleOffset;
 
         [Header("Weapon Settings")] public float fireRate = 0.38f;
-
         public GameObject plasmaPrefab;
         public float searchRadius = 8.5f;
 
         private float _currentAngle;
         private float _nextFireTime;
 
+        // Cache player reference — avoids singleton lookup every Update frame
+        private PlayerController _player;
+
         private void Awake()
         {
-            GetComponent<SpriteRenderer>();
             _currentAngle = angleOffset;
         }
 
         private void Start()
         {
             _nextFireTime = Time.time + 0.3f;
+            _player = PlayerController.Instance;
         }
 
         private void Update()
         {
-            var player = PlayerController.Instance;
-            if (!player || player.currentLives <= 0)
+            // Refresh cache only if lost (e.g. player died and respawned)
+            if (_player == null) _player = PlayerController.Instance;
+            if (_player == null || _player.currentLives <= 0)
             {
                 Destroy(gameObject);
                 return;
@@ -46,7 +48,7 @@ namespace Player
 
             var rad = _currentAngle * Mathf.Deg2Rad;
             var offset = new Vector3(Mathf.Cos(rad) * orbitRadius, Mathf.Sin(rad) * (orbitRadius * 0.75f), 0f);
-            transform.position = player.transform.position + offset;
+            transform.position = _player.transform.position + offset;
 
             // Auto-aim and fire at nearest threat
             if (!(Time.time >= _nextFireTime)) return;
@@ -60,7 +62,7 @@ namespace Player
             var minDistanceSqr = searchRadius * searchRadius;
             var myPos = transform.position;
 
-            // Check Boss
+            // Check Boss via static reference (zero lookup cost)
             var boss = BossController.ActiveBoss;
             if (boss != null && boss.gameObject.activeInHierarchy)
             {
@@ -72,8 +74,9 @@ namespace Player
                 }
             }
 
-            // Check Enemies from ActiveEnemies static list (Zero GC Allocation!)
-            foreach (var e in Enemy.ActiveEnemies)
+            // Check Enemies from ActiveEnemies static list (zero GC allocation)
+            var enemies = Enemy.ActiveEnemies;
+            foreach (var e in enemies)
             {
                 if (!e || !e.gameObject.activeInHierarchy || e.IsDead) continue;
                 var dSqr = (myPos - e.transform.position).sqrMagnitude;
@@ -82,14 +85,15 @@ namespace Player
                 bestTarget = e.transform;
             }
 
-            // If target found, fire plasma bolt
             if (bestTarget == null) return;
+
             var dir = (bestTarget.position - transform.position).normalized;
             var angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
             var rot = Quaternion.Euler(0f, 0f, angle);
 
-            if (plasmaPrefab == null && PlayerController.Instance != null)
-                plasmaPrefab = PlayerController.Instance.laserPrefab;
+            // Lazy-cache laser prefab from player
+            if (plasmaPrefab == null && _player != null)
+                plasmaPrefab = _player.laserPrefab;
 
             if (plasmaPrefab != null)
             {
@@ -101,7 +105,7 @@ namespace Player
                     laser.damage = 1;
                     laser.speed = 15f;
                     var sr = laser.GetComponent<SpriteRenderer>();
-                    if (sr != null) sr.color = new Color(0.2f, 1f, 0.7f); // Cyan-emerald plasma
+                    if (sr != null) sr.color = new Color(0.2f, 1f, 0.7f);
                 }
             }
 

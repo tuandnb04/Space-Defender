@@ -9,64 +9,43 @@ namespace Combat
     public class Laser : MonoBehaviour
     {
         [Header("Laser Settings")] public float speed = 13f;
-
         public float topBoundaryOffset = 1.0f;
         public bool isEnemyLaser;
         public int damage = 1;
         public bool isFeverLaser;
-        private float _bottomY = -6f;
+
+        // Cached once per scene — Camera.main is a string lookup
+        private static Camera _mainCam;
+        private static float _cachedTopY = 6f;
+        private static float _cachedBottomY = -6f;
+
         private bool _hasGrazed;
         private SpriteRenderer _spriteRenderer;
 
-        private float _topY = 6f;
+        // Cache player reference per-laser lifetime — avoids PlayerController.Instance lookup every frame
+        private static PlayerController _cachedPlayer;
 
         private void Awake()
         {
             _spriteRenderer = GetComponent<SpriteRenderer>();
-            if (isEnemyLaser && _spriteRenderer != null) _spriteRenderer.flipY = true;
-        }
-
-        private void Update()
-        {
-            var dir = isEnemyLaser ? -transform.up : transform.up;
-            transform.Translate(dir * (speed * Time.deltaTime), Space.World);
-
-            // Check Graze on player for enemy lasers
-            if (isEnemyLaser && !_hasGrazed)
-            {
-                var player = PlayerController.Instance;
-                if (player && !player.IsInvulnerable)
-                {
-                    var sqrDist = ((Vector2)transform.position - (Vector2)player.CockpitPosition).sqrMagnitude;
-                    if (sqrDist is <= 0.7225f and > 0.0324f) // 0.85^2 and 0.18^2
-                    {
-                        _hasGrazed = true;
-                        player.RegisterGraze(transform.position);
-                    }
-                }
-            }
-
-            if (isEnemyLaser)
-            {
-                if (transform.position.y < _bottomY || Mathf.Abs(transform.position.x) > 10f) Despawn();
-            }
-            else
-            {
-                if (transform.position.y > _topY || Mathf.Abs(transform.position.x) > 10f) Despawn();
-            }
         }
 
         private void OnEnable()
         {
             _hasGrazed = false;
-            var cam = Camera.main;
-            if (cam != null)
+
+            // Refresh camera bounds once per enable (not per-Update)
+            if (_mainCam == null) _mainCam = Camera.main;
+            if (_mainCam != null)
             {
-                _topY = cam.orthographicSize + topBoundaryOffset;
-                _bottomY = -cam.orthographicSize - topBoundaryOffset;
+                _cachedTopY = _mainCam.orthographicSize + topBoundaryOffset;
+                _cachedBottomY = -_mainCam.orthographicSize - topBoundaryOffset;
             }
 
-            // Balanced projectile speeds: Player lasers fast (15f), standard enemy lasers readable (8.5f)
+            // Flip sprite based on direction
+            if (_spriteRenderer != null) _spriteRenderer.flipY = isEnemyLaser;
+
+            // Balanced projectile speeds
             if (isEnemyLaser)
             {
                 if (speed is > 11f and < 14.5f) speed = 8.5f;
@@ -74,6 +53,40 @@ namespace Combat
             else
             {
                 if (speed < 14f) speed = 15f;
+            }
+        }
+
+        private void Update()
+        {
+            var dir = isEnemyLaser ? -transform.up : transform.up;
+            transform.Translate(dir * (speed * Time.deltaTime), Space.World);
+
+            // Graze check: use cached player reference — no per-frame singleton lookup
+            if (isEnemyLaser && !_hasGrazed)
+            {
+                // Refresh cache only when null (player died or scene change)
+                if (_cachedPlayer == null) _cachedPlayer = PlayerController.Instance;
+                var player = _cachedPlayer;
+                if (player != null && !player.IsInvulnerable)
+                {
+                    var sqrDist = ((Vector2)transform.position - (Vector2)player.CockpitPosition).sqrMagnitude;
+                    if (sqrDist is <= 0.7225f and > 0.0324f)
+                    {
+                        _hasGrazed = true;
+                        player.RegisterGraze(transform.position);
+                    }
+                }
+            }
+
+            var posX = transform.position.x;
+            var posY = transform.position.y;
+            if (isEnemyLaser)
+            {
+                if (posY < _cachedBottomY || Mathf.Abs(posX) > 10f) Despawn();
+            }
+            else
+            {
+                if (posY > _cachedTopY || Mathf.Abs(posX) > 10f) Despawn();
             }
         }
 
@@ -99,50 +112,58 @@ namespace Combat
                 return;
             }
 
-            // Player laser damages Enemy and Boss
-            var playerCtrl = PlayerController.Instance;
+            // Player laser — figure out what we hit first (only one GetComponentInParent branch executes)
+            var enemy = target.GetComponentInParent<Enemy>();
+            SplittingMeteor meteor = null;
+            BossController boss = null;
+
+            if (enemy == null)
+            {
+                meteor = target.GetComponentInParent<SplittingMeteor>();
+                if (meteor == null)
+                    boss = target.GetComponentInParent<BossController>();
+            }
+
+            // Nothing hittable
+            if (enemy == null && meteor == null && boss == null) return;
+
+            // Point-blank bonus — use sqrMagnitude (no sqrt)
             var finalDamage = damage;
             var isPointBlank = false;
-
-            if (playerCtrl != null)
+            if (_cachedPlayer == null) _cachedPlayer = PlayerController.Instance;
+            if (_cachedPlayer != null)
             {
-                var distToPlayer = Vector2.Distance(playerCtrl.transform.position, transform.position);
-                // Point-blank bonus: closer than 2.6 units -> 1.8x damage
-                if (distToPlayer < 2.6f)
+                var dx = _cachedPlayer.transform.position.x - transform.position.x;
+                var dy = _cachedPlayer.transform.position.y - transform.position.y;
+                if (dx * dx + dy * dy < 6.76f) // 2.6^2
                 {
                     finalDamage = Mathf.RoundToInt(damage * 1.8f);
                     isPointBlank = true;
                 }
             }
 
-            var enemy = target.GetComponentInParent<Enemy>();
+            // Shared hit effects
+            HitSparkEffect.SpawnSpark(transform.position, new Color(1f, 0.9f, 0.25f));
+            var hasTesla = PerkManager.Instance != null && PerkManager.Instance.HasPerk(PerkType.TeslaArc);
+
             if (enemy != null)
             {
-                HitSparkEffect.SpawnSpark(transform.position, new Color(1f, 0.9f, 0.25f));
-                if (PerkManager.Instance != null && PerkManager.Instance.HasPerk(PerkType.TeslaArc))
-                    TriggerTeslaArc(transform.position, enemy.gameObject);
+                if (hasTesla) TriggerTeslaArc(transform.position, enemy.gameObject);
                 enemy.TakeHitWithDamage(finalDamage, transform.position, isPointBlank);
-                Despawn();
-                return;
             }
-
-            var meteor = target.GetComponentInParent<SplittingMeteor>();
-            if (meteor != null)
+            else if (meteor != null)
             {
-                HitSparkEffect.SpawnSpark(transform.position, new Color(1f, 0.9f, 0.25f));
-                if (PerkManager.Instance != null && PerkManager.Instance.HasPerk(PerkType.TeslaArc))
-                    TriggerTeslaArc(transform.position, meteor.gameObject);
+                if (hasTesla) TriggerTeslaArc(transform.position, meteor.gameObject);
                 meteor.TakeHitWithDamage(finalDamage);
-                Despawn();
-                return;
+            }
+            else
+            {
+                if (hasTesla)
+                    if (boss != null)
+                        TriggerTeslaArc(transform.position, boss.gameObject);
+                if (boss != null) boss.TakeHit(finalDamage);
             }
 
-            var boss = target.GetComponentInParent<BossController>();
-            if (boss == null) return;
-            HitSparkEffect.SpawnSpark(transform.position, new Color(1f, 0.9f, 0.25f));
-            if (PerkManager.Instance != null && PerkManager.Instance.HasPerk(PerkType.TeslaArc))
-                TriggerTeslaArc(transform.position, boss.gameObject);
-            boss.TakeHit(finalDamage);
             Despawn();
         }
 
@@ -152,33 +173,29 @@ namespace Combat
             Enemy target1 = null;
             Enemy target2 = null;
 
-            foreach (var enemy in from enemy in Enemy.ActiveEnemies
-                     where enemy != null && enemy.gameObject != primaryTarget && !enemy.IsDead
-                     let sqrDist = ((Vector2)enemy.transform.position - (Vector2)hitPos).sqrMagnitude
-                     where sqrDist <= radiusSqr
-                     select enemy)
-                if (target1 == null)
-                {
-                    target1 = enemy;
-                }
-                else
-                {
-                    target2 = enemy;
-                    break;
-                }
+            // No LINQ — simple loop over ActiveEnemies list (zero allocations)
+            var enemies = Enemy.ActiveEnemies;
+            foreach (var e in from e in enemies where e != null && e.gameObject != primaryTarget && !e.IsDead let sqrDist = ((Vector2)e.transform.position - (Vector2)hitPos).sqrMagnitude where !(sqrDist > radiusSqr) select e)
+            {
+                if (target1 == null) target1 = e;
+                else { target2 = e; break; }
+            }
 
+            var arcDamage = Mathf.Max(1, damage / 2);
             if (target1 != null && !target1.IsDead)
             {
-                target1.TakeHitWithDamage(Mathf.Max(1, damage / 2));
+                target1.TakeHitWithDamage(arcDamage);
                 HitSparkEffect.SpawnSpark(target1.transform.position, new Color(0.2f, 0.9f, 1f));
             }
 
             if (target2 == null || target2.IsDead) return;
-            target2.TakeHitWithDamage(Mathf.Max(1, damage / 2));
+            target2.TakeHitWithDamage(arcDamage);
             HitSparkEffect.SpawnSpark(target2.transform.position, new Color(0.2f, 0.9f, 1f));
         }
 
-        // ReSharper disable Unity.PerformanceAnalysis
+        // Invalidate cached player when player dies or respawns
+        public static void InvalidatePlayerCache() => _cachedPlayer = null;
+
         private void Despawn()
         {
             ObjectPoolManager.Despawn(gameObject);

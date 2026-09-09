@@ -113,7 +113,6 @@ namespace Combat
         private float _elapsed;
         private float _speed;
         private SpriteRenderer _sr;
-        private Color _startColor;
 
         private void Awake()
         {
@@ -128,8 +127,10 @@ namespace Combat
 
             if (_sr != null)
             {
-                var alpha = Mathf.Lerp(1f, 0f, _elapsed / _duration);
-                _sr.color = new Color(_startColor.r, _startColor.g, _startColor.b, alpha);
+                // Modify alpha in-place — avoids new Color struct allocation every frame
+                var c = _sr.color;
+                c.a = Mathf.Lerp(1f, 0f, _elapsed / _duration);
+                _sr.color = c;
             }
 
             if (_elapsed >= _duration) HitSparkEffect.ReturnToPool(this);
@@ -139,7 +140,6 @@ namespace Combat
         {
             _direction = dir;
             _speed = spd;
-            _startColor = col;
             _duration = dur;
             _elapsed = 0f;
             if (_sr == null) _sr = GetComponent<SpriteRenderer>();
